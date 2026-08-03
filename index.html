@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="zh-HK" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="五十音學堂">
+    <title>五十音日語自學堂 - Kana Learning App</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sakura: {
+                            50: '#fff5f7',
+                            100: '#ffe6ec',
+                            200: '#fcccd8',
+                            300: '#fa9bb2',
+                            400: '#f66286',
+                            500: '#ee3663',
+                            600: '#db1d4f',
+                        },
+                        fuji: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        },
+                        matcha: {
+                            50: '#f4f9f4',
+                            500: '#52b788',
+                            600: '#40916c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            background-color: #f8f9fa;
+        }
+        
+        /* Smooth scrolling & hide scrollbars for app-like clean interface */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Card active feedback animation */
+        .active-scale {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .active-scale:active {
+            transform: scale(0.95);
+        }
+
+        /* Safe area support for iOS home indicator and notch */
+        .pb-safe {
+            padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 16px));
+        }
+        .pt-safe {
+            padding-top: max(1rem, env(safe-area-inset-top, 0px));
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans antialiased overflow-hidden selection:bg-sakura-200">
+
+    <!-- App Navigation Top Bar -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-20 pt-safe px-4 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2">
+            <span class="w-8 h-8 rounded-full bg-sakura-100 text-sakura-500 flex items-center justify-center font-bold text-lg shadow-inner">あ</span>
+            <h1 class="text-lg font-bold text-slate-800 tracking-tight" id="headerTitle">五十音學堂</h1>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="playSampleAudio()" title="測試音訊" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-sakura-50 text-slate-600 hover:text-sakura-500 flex items-center justify-center transition active-scale">
+                <i class="fa-solid me-0 fa-volume-high text-sm"></i>
+            </button>
+            <div id="streakBadge" class="bg-amber-50 border border-amber-200 text-amber-700 text-xs px-2.5 py-1 rounded-full flex items-center space-x-1 font-semibold">
+                <i class="fa-solid fa-fire text-amber-500"></i>
+                <span id="streakCount">1 天</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 overflow-y-auto pb-safe no-scrollbar" id="mainContainer">
+        
+        <!-- ==================== TAB 1: LEARN (假名庫) ==================== -->
+        <section id="tab-learn" class="p-4 max-w-lg mx-auto space-y-4">
+            
+            <!-- Type Toggle & Filter -->
+            <div class="bg-slate-200/60 p-1 rounded-2xl flex text-sm font-semibold text-slate-600">
+                <button id="btn-hiragana" onclick="switchKanaType('hiragana')" class="flex-1 py-2 rounded-xl bg-white text-sakura-600 shadow-sm transition-all duration-200 text-center">
+                    平假名 (Hiragana)
+                </button>
+                <button id="btn-katakana" onclick="switchKanaType('katakana')" class="flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-800 transition-all duration-200 text-center">
+                    片假名 (Katakana)
+                </button>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="flex space-x-2 overflow-x-auto no-scrollbar py-1">
+                <button onclick="filterCategory('all')" id="cat-all" class="cat-btn px-4 py-1.5 rounded-full text-xs font-medium bg-slate-800 text-white shadow-sm whitespace-nowrap">全部</button>
+                <button onclick="filterCategory('seion')" id="cat-seion" class="cat-btn px-4 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 whitespace-nowrap">清音 (五十音)</button>
+                <button onclick="filterCategory('dakuon')" id="cat-dakuon" class="cat-btn px-4 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 whitespace-nowrap">濁音 / 半濁音</button>
+                <button onclick="filterCategory('youon')" id="cat-youon" class="cat-btn px-4 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 whitespace-nowrap">拗音</button>
+            </div>
+
+            <!-- Progress mini bar -->
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-sakura-50 flex items-center justify-center text-sakura-500">
+                        <i class="fa-solid fa-circle-check text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-medium">當前庫掌握進度</div>
+                        <div class="text-sm font-bold text-slate-800" id="currentMasteryText">0 / 46 (0%)</div>
+                    </div>
+                </div>
+                <div class="w-24 bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div id="currentMasteryBar" class="bg-sakura-400 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Kana Grid Container -->
+            <div id="kanaGrid" class="grid grid-cols-5 gap-2.5">
+                <!-- Dynamically populated Kana Cards -->
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: QUIZ (隨機測驗) ==================== -->
+        <section id="tab-quiz" class="p-4 max-w-lg mx-auto hidden space-y-4">
+            
+            <!-- Quiz Configuration View -->
+            <div id="quizSetupCard" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-5">
+                <div class="text-center space-y-1">
+                    <div class="w-14 h-14 bg-fuji-50 text-fuji-500 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-inner">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800">五十音隨機測驗</h2>
+                    <p class="text-xs text-slate-400">通過測驗檢驗記憶成果，強化弱項</p>
+                </div>
+
+                <!-- Range Selector -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">1. 選擇測驗範圍</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setQuizRange('all')" id="qrange-all" class="qrange-btn py-2.5 px-2 rounded-xl border-2 border-fuji-500 bg-fuji-50 text-fuji-600 text-xs font-bold transition">全部假名</button>
+                        <button onclick="setQuizRange('hiragana')" id="qrange-hiragana" class="qrange-btn py-2.5 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-bold transition">僅平假名</button>
+                        <button onclick="setQuizRange('katakana')" id="qrange-katakana" class="qrange-btn py-2.5 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-bold transition">僅片假名</button>
+                    </div>
+                </div>
+
+                <!-- Type Selector -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">2. 選擇題目模式</label>
+                    <select id="quizTypeSelect" class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 focus:outline-none focus:border-fuji-500">
+                        <option value="kana2romaji">看假名 ➔ 選羅馬拼音</option>
+                        <option value="audio2kana">聽語音 ➔ 選正確假名</option>
+                        <option value="word2kana">看常用詞 ➔ 選對應假名</option>
+                    </select>
+                </div>
+
+                <!-- Start Button -->
+                <button onclick="startQuiz()" class="w-full py-3.5 bg-fuji-500 hover:bg-fuji-600 text-white font-bold rounded-2xl shadow-lg shadow-fuji-500/20 active-scale flex items-center justify-center space-x-2 text-base">
+                    <span>開始 10 題測驗</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Active Quiz View Container -->
+            <div id="quizActiveCard" class="hidden space-y-4">
+                <!-- Quiz Header Progress -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full" id="quizQuestionNum">第 1 / 10 題</span>
+                        <span class="text-xs text-slate-400" id="quizScoreCount">得分: 0</span>
+                    </div>
+                    <button onclick="exitQuiz()" class="text-xs text-slate-400 hover:text-slate-600">結束測驗</button>
+                </div>
+
+                <!-- Question Box -->
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm text-center space-y-4 relative overflow-hidden">
+                    <div class="text-xs font-bold text-fuji-500 uppercase tracking-widest" id="quizTypeLabel">請選擇正確拼音</div>
+                    
+                    <div id="quizPromptBox" class="min-h-[100px] flex flex-col items-center justify-center">
+                        <!-- Dynamic prompt: character, audio button, or word -->
+                    </div>
+
+                    <div id="quizFeedback" class="h-6 text-sm font-bold flex items-center justify-center space-x-1 opacity-0 transition-opacity">
+                        <!-- Correct/Wrong text -->
+                    </div>
+                </div>
+
+                <!-- Answer Choices (4 options) -->
+                <div id="quizOptionsGrid" class="grid grid-cols-2 gap-3">
+                    <!-- Dynamic buttons -->
+                </div>
+            </div>
+
+            <!-- Quiz Summary Result Card -->
+            <div id="quizResultCard" class="hidden bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center space-y-5">
+                <div class="w-20 h-20 rounded-full bg-emerald-50 text-emerald-500 mx-auto flex items-center justify-center text-4xl shadow-inner">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800">測驗完成！</h3>
+                    <p class="text-sm text-slate-500 mt-1" id="quizResultDetail">你獲得了 80 分</p>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left space-y-2">
+                    <div class="text-xs font-bold text-slate-400 uppercase">錯題複習建議</div>
+                    <div id="quizWrongList" class="text-sm text-slate-600 flex flex-wrap gap-1.5">
+                        <!-- Dynamic wrong item pills -->
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button onclick="resetToQuizSetup()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl active-scale text-sm">再次測驗</button>
+                    <button onclick="switchTab('learn')" class="flex-1 py-3 bg-sakura-500 text-white font-bold rounded-xl shadow-md shadow-sakura-500/20 active-scale text-sm">回到假名庫</button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==================== TAB 3: PROGRESS (學習進度) ==================== -->
+        <section id="tab-progress" class="p-4 max-w-lg mx-auto hidden space-y-4">
+            
+            <!-- Mastery Overview Card -->
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-pie text-sakura-500"></i>
+                    <span>五十音掌握進度概覽</span>
+                </h2>
+
+                <!-- Hiragana Progress -->
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-600">平假名掌握率</span>
+                        <span class="text-sakura-600" id="progHiraText">0% (0/46)</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                        <div id="progHiraBar" class="bg-sakura-400 h-3 rounded-full transition-all duration-700" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Katakana Progress -->
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-600">片假名掌握率</span>
+                        <span class="text-fuji-600" id="progKataText">0% (0/46)</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                        <div id="progKataBar" class="bg-fuji-500 h-3 rounded-full transition-all duration-700" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-medium">連續學習天數</div>
+                        <div class="text-lg font-bold text-slate-800" id="statStreak">1 天</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-medium">測驗最高得分</div>
+                        <div class="text-lg font-bold text-slate-800" id="statHighScore">0 分</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset Data Zone -->
+            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+                <h3 class="text-sm font-bold text-slate-800">進度管理</h3>
+                <p class="text-xs text-slate-400">如需重新建構記憶，可以清空目前所有的歷史掌握記錄。</p>
+                <button onclick="confirmResetProgress()" class="w-full py-2.5 border border-red-200 text-red-500 hover:bg-red-50 font-semibold rounded-xl text-xs transition active-scale">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> 重置所有學習進度
+                </button>
+            </div>
+
+        </section>
+
+        <!-- ==================== TAB 4: SEARCH (搜尋與速查) ==================== -->
+        <section id="tab-search" class="p-4 max-w-lg mx-auto hidden space-y-4">
+            
+            <!-- Search Bar Input -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="輸入假名、羅馬拼音、字源或中文詞彙..." class="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-sakura-400 shadow-sm">
+            </div>
+
+            <!-- Search Results Counter -->
+            <div class="text-xs font-semibold text-slate-400 px-1" id="searchCountText">請輸入關鍵字進行快速檢索</div>
+
+            <!-- Search Results List -->
+            <div id="searchResultsList" class="space-y-2">
+                <!-- Dynamic results -->
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Detail Learning Modal Overlay -->
+    <div id="detailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl p-6 space-y-5 animate-slide-up">
+            
+            <!-- Modal Top Bar -->
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <span class="text-xs font-bold text-sakura-500 bg-sakura-50 px-3 py-1 rounded-full uppercase tracking-wider" id="modalTypeBadge">平假名 • 清音</span>
+                <button onclick="closeModal()" class="w-8 h-8 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-full flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Character Hero Box -->
+            <div class="flex items-center justify-between bg-gradient-to-br from-sakura-50 to-orange-50/50 p-5 rounded-2xl border border-sakura-100">
+                <div class="space-y-1">
+                    <div id="modalChar" class="text-6xl font-black text-slate-800 leading-none">あ</div>
+                    <div id="modalRomaji" class="text-lg font-bold text-sakura-600">a</div>
+                </div>
+
+                <!-- Visual Memory SVG Graphic -->
+                <div class="w-20 h-20 bg-white rounded-xl shadow-sm border border-slate-100 p-2 flex flex-col items-center justify-center text-center">
+                    <div id="modalSvgGraphic" class="w-10 h-10 flex items-center justify-center text-sakura-500 text-2xl font-bold">
+                        <!-- Origin SVG / Icon -->
+                    </div>
+                    <div id="modalOrigin" class="text-[10px] font-bold text-slate-500 mt-1">源自：安</div>
+                </div>
+
+                <!-- Speech Audio Trigger Button -->
+                <button id="modalAudioBtn" onclick="speakCurrentModal()" class="w-14 h-14 bg-sakura-500 hover:bg-sakura-600 text-white rounded-2xl shadow-lg shadow-sakura-500/30 flex items-center justify-center text-xl active-scale">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+
+            <!-- 3 Common Vocabulary Words -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                    <i class="fa-solid fa-book-bookmark text-sakura-400"></i>
+                    <span>3 個常用詞彙</span>
+                </h4>
+                <div id="modalWordsList" class="space-y-2">
+                    <!-- Dynamic 3 words -->
+                </div>
+            </div>
+
+            <!-- 3 Practical Sentences -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                    <i class="fa-solid fa-comments text-fuji-400"></i>
+                    <span>3 句簡單實用例句</span>
+                </h4>
+                <div id="modalSentencesList" class="space-y-2">
+                    <!-- Dynamic 3 sentences -->
+                </div>
+            </div>
+
+            <!-- Mastery Toggle Switch -->
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-700">標記為已掌握：</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="modalMasteredToggle" onchange="toggleMasteryFromModal()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Tab Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200/80 z-30 pb-[env(safe-area-inset-bottom,0px)]">
+        <div class="max-w-lg mx-auto flex justify-around items-center h-16">
+            <button onclick="switchTab('learn')" id="tabBtn-learn" class="tab-item flex flex-col items-center justify-center w-full h-full text-sakura-500 font-bold transition">
+                <i class="fa-solid fa-layer-group text-lg"></i>
+                <span class="text-[10px] mt-1">假名庫</span>
+            </button>
+            <button onclick="switchTab('quiz')" id="tabBtn-quiz" class="tab-item flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 transition">
+                <i class="fa-solid fa-circle-question text-lg"></i>
+                <span class="text-[10px] mt-1">隨機測驗</span>
+            </button>
+            <button onclick="switchTab('progress')" id="tabBtn-progress" class="tab-item flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 transition">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="text-[10px] mt-1">學習進度</span>
+            </button>
+            <button onclick="switchTab('search')" id="tabBtn-search" class="tab-item flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600 transition">
+                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                <span class="text-[10px] mt-1">搜尋</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        const KANA_DATABASE = [
+            // ==========================================
+            // HIRAGANA SEION (平假名 46清音)
+            // ==========================================
+            {
+                id: "h_a", char: "あ", type: "hiragana", category: "seion", romaji: "a", origin: "安",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">安</text></svg>`,
+                words: [
+                    { japanese: "朝", kana: "あさ", meaning: "早上" },
+                    { japanese: "雨", kana: "あめ", meaning: "雨" },
+                    { japanese: "青", kana: "あお", meaning: "藍色" }
+                ],
+                sentences: [
+                    { japanese: "朝起きます。", kana: "あさ おきます", meaning: "早上起床。" },
+                    { japanese: "雨が降っています。", kana: "あめ が ふっています", meaning: "正在下雨。" },
+                    { japanese: "青い空が見える。", kana: "あおい そら が みえる", meaning: "看得到藍天。" }
+                ]
+            },
+            {
+                id: "h_i", char: "い", type: "hiragana", category: "seion", romaji: "i", origin: "以",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">以</text></svg>`,
+                words: [
+                    { japanese: "犬", kana: "いぬ", meaning: "小狗" },
+                    { japanese: "苺", kana: "いちご", meaning: "草莓" },
+                    { japanese: "家", kana: "いえ", meaning: "房子/家" }
+                ],
+                sentences: [
+                    { japanese: "犬と散歩する。", kana: "いぬ と さんぽ する", meaning: "和狗一起散步。" },
+                    { japanese: "甘い苺を食べる。", kana: "あまい いちご を たべる", meaning: "吃甜草莓。" },
+                    { japanese: "家へ帰ります。", kana: "いえ へ かえります", meaning: "回家。" }
+                ]
+            },
+            {
+                id: "h_u", char: "う", type: "hiragana", category: "seion", romaji: "u", origin: "宇",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">宇</text></svg>`,
+                words: [
+                    { japanese: "海", kana: "うみ", meaning: "大海" },
+                    { japanese: "歌", kana: "うた", meaning: "歌曲" },
+                    { japanese: "牛", kana: "うし", meaning: "牛" }
+                ],
+                sentences: [
+                    { japanese: "海に行きたい。", kana: "うみ に いきたい", meaning: "想去海邊。" },
+                    { japanese: "歌を歌います。", kana: "うた を うたい ます", meaning: "唱歌。" },
+                    { japanese: "牛乳を飲む。", kana: "ぎゅうにゅう を のむ", meaning: "喝牛奶。" }
+                ]
+            },
+            {
+                id: "h_e", char: "え", type: "hiragana", category: "seion", romaji: "e", origin: "衣",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">衣</text></svg>`,
+                words: [
+                    { japanese: "駅", kana: "えき", meaning: "車站" },
+                    { japanese: "鉛筆", kana: "えんぴつ", meaning: "鉛筆" },
+                    { japanese: "映画", kana: "えいが", meaning: "電影" }
+                ],
+                sentences: [
+                    { japanese: "駅で集合する。", kana: "えき で しゅうごう する", meaning: "在車站集合。" },
+                    { japanese: "鉛筆で書く。", kana: "えんぴつ で かく", meaning: "用鉛筆寫字。" },
+                    { japanese: "映画を見よう。", kana: "えいが を みよう", meaning: "一起看電影吧。" }
+                ]
+            },
+            {
+                id: "h_o", char: "お", type: "hiragana", category: "seion", romaji: "o", origin: "於",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">於</text></svg>`,
+                words: [
+                    { japanese: "お茶", kana: "おちゃ", meaning: "綠茶" },
+                    { japanese: "音楽", kana: "おんがく", meaning: "音樂" },
+                    { japanese: "お菓子", kana: "おかし", meaning: "糕點零食" }
+                ],
+                sentences: [
+                    { japanese: "お茶を飲みます。", kana: "おちゃ を のみます", meaning: "喝綠茶。" },
+                    { japanese: "音楽を聞く。", kana: "おんがく を きく", meaning: "聽音樂。" },
+                    { japanese: "おいしいお菓子。", kana: "おいしい おかし", meaning: "好吃的點心。" }
+                ]
+            },
+            {
+                id: "h_ka", char: "か", type: "hiragana", category: "seion", romaji: "ka", origin: "加",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">加</text></svg>`,
+                words: [
+                    { japanese: "傘", kana: "かさ", meaning: "雨傘" },
+                    { japanese: "川", kana: "かわ", meaning: "河流" },
+                    { japanese: "風", kana: "かぜ", meaning: "風/感冒" }
+                ],
+                sentences: [
+                    { japanese: "傘をさす。", kana: "かさ を さす", meaning: "撐雨傘。" },
+                    { japanese: "川が流れる。", kana: "かわ が ながれる", meaning: "河水流淌。" },
+                    { japanese: "風が強い。", kana: "かぜ が つよい", meaning: "風很大。" }
+                ]
+            },
+            {
+                id: "h_ki", char: "き", type: "hiragana", category: "seion", romaji: "ki", origin: "幾",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">幾</text></svg>`,
+                words: [
+                    { japanese: "木", kana: "き", meaning: "樹木" },
+                    { japanese: "切手", kana: "きって", meaning: "郵票" },
+                    { japanese: "昨日", kana: "きのう", meaning: "昨天" }
+                ],
+                sentences: [
+                    { japanese: "大きな木がある。", kana: "おおきな き が ある", meaning: "有一棵大樹。" },
+                    { japanese: "切手を貼る。", kana: "きって を はる", meaning: "貼郵票。" },
+                    { japanese: "昨日は楽しかった。", kana: "きのう は たのしかった", meaning: "昨天很開心。" }
+                ]
+            },
+            {
+                id: "h_ku", char: "く", type: "hiragana", category: "seion", romaji: "ku", origin: "久",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">久</text></svg>`,
+                words: [
+                    { japanese: "車", kana: "くるま", meaning: "汽車" },
+                    { japanese: "果物", kana: "くだもの", meaning: "水果" },
+                    { japanese: "靴", kana: "くつ", meaning: "鞋子" }
+                ],
+                sentences: [
+                    { japanese: "車を運転する。", kana: "くるま を うんてん する", meaning: "開車。" },
+                    { japanese: "新鮮な果物。", kana: "しんせん な くだもの", meaning: "新鮮的水果。" },
+                    { japanese: "新しい靴を買う。", kana: "あたらしい くつ を かう", meaning: "買新鞋。" }
+                ]
+            },
+            {
+                id: "h_ke", char: "け", type: "hiragana", category: "seion", romaji: "ke", origin: "計",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">計</text></svg>`,
+                words: [
+                    { japanese: "今朝", kana: "けさ", meaning: "今天早上" },
+                    { japanese: "景色", kana: "けしき", meaning: "風景" },
+                    { japanese: "警察", kana: "けいさつ", meaning: "警察" }
+                ],
+                sentences: [
+                    { japanese: "今朝は寒い。", kana: "けさ は さむい", meaning: "今天早上很冷。" },
+                    { japanese: "綺麗な景色。", kana: "きれい な けしき", meaning: "美麗的風景。" },
+                    { japanese: "警察に知らせる。", kana: "けいさつ に しらせる", meaning: "通知警察。" }
+                ]
+            },
+            {
+                id: "h_ko", char: "こ", type: "hiragana", category: "seion", romaji: "ko", origin: "己",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">己</text></svg>`,
+                words: [
+                    { japanese: "声", kana: "こえ", meaning: "聲音" },
+                    { japanese: "子供", kana: "こども", meaning: "小孩" },
+                    { japanese: "心", kana: "こころ", meaning: "心靈" }
+                ],
+                sentences: [
+                    { japanese: "綺麗な声。", kana: "きれい な こえ", meaning: "好聽的聲音。" },
+                    { japanese: "子供たちが遊ぶ。", kana: "こども たち が あそぶ", meaning: "孩子們在玩耍。" },
+                    { japanese: "心が温まる。", kana: "こころ が あたたまる", meaning: "感到溫暖。" }
+                ]
+            },
+            {
+                id: "h_sa", char: "さ", type: "hiragana", category: "seion", romaji: "sa", origin: "左",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">左</text></svg>`,
+                words: [
+                    { japanese: "魚", kana: "さかな", meaning: "魚" },
+                    { japanese: "桜", kana: "さくら", meaning: "櫻花" },
+                    { japanese: "砂糖", kana: "さとう", meaning: "糖" }
+                ],
+                sentences: [
+                    { japanese: "新鮮な魚を食べる。", kana: "しんせん な さかな を たべる", meaning: "吃新鮮的魚。" },
+                    { japanese: "桜の花が咲く。", kana: "さくら の はな が さく", meaning: "櫻花盛開。" },
+                    { japanese: "コーヒーに砂糖を入れる。", kana: "こーひー に さとう を いれる", meaning: "咖啡加糖。" }
+                ]
+            },
+            {
+                id: "h_shi", char: "し", type: "hiragana", category: "seion", romaji: "shi", origin: "之",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">之</text></svg>`,
+                words: [
+                    { japanese: "新聞", kana: "しんぶん", meaning: "報紙" },
+                    { japanese: "塩", kana: "しお", meaning: "鹽" },
+                    { japanese: "仕事", kana: "しごと", meaning: "工作" }
+                ],
+                sentences: [
+                    { japanese: "毎朝新聞を読む。", kana: "まいあさ しんぶん を よむ", meaning: "每天早晨讀報。" },
+                    { japanese: "少し塩を入れる。", kana: "すこし しお を いれる", meaning: "加一點鹽。" },
+                    { japanese: "仕事が終わりました。", kana: "しごと が おわり ました", meaning: "工作結束了。" }
+                ]
+            },
+            {
+                id: "h_su", char: "す", type: "hiragana", category: "seion", romaji: "su", origin: "寸",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">寸</text></svg>`,
+                words: [
+                    { japanese: "寿司", kana: "すし", meaning: "壽司" },
+                    { japanese: "西瓜", kana: "すいか", meaning: "西瓜" },
+                    { japanese: "姿", kana: "すがた", meaning: "姿態" }
+                ],
+                sentences: [
+                    { japanese: "寿司が好きです。", kana: "すし が すき です", meaning: "我喜歡壽司。" },
+                    { japanese: "夏に西瓜を食べる。", kana: "なつ に すいか を たべる", meaning: "夏天吃西瓜。" },
+                    { japanese: "美しい姿。", kana: "うつくしい すがた", meaning: "優美的身姿。" }
+                ]
+            },
+            {
+                id: "h_se", char: "せ", type: "hiragana", category: "seion", romaji: "se", origin: "世",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">世</text></svg>`,
+                words: [
+                    { japanese: "世界", kana: "せかい", meaning: "世界" },
+                    { japanese: "先生", kana: "せんせい", meaning: "老師" },
+                    { japanese: "背中", kana: "せなか", meaning: "背部" }
+                ],
+                sentences: [
+                    { japanese: "世界を旅行したい。", kana: "せかい を りょこう したい", meaning: "想去世界環遊。" },
+                    { japanese: "先生に質問する。", kana: "せんせい に しつもん する", meaning: "向老師提問。" },
+                    { japanese: "背中が痛い。", kana: "せなか が いたい", meaning: "後背疼痛。" }
+                ]
+            },
+            {
+                id: "h_so", char: "そ", type: "hiragana", category: "seion", romaji: "so", origin: "曾",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">曾</text></svg>`,
+                words: [
+                    { japanese: "空", kana: "そら", meaning: "天空" },
+                    { japanese: "掃除", kana: "そうじ", meaning: "打掃" },
+                    { japanese: "外", kana: "そと", meaning: "外面" }
+                ],
+                sentences: [
+                    { japanese: "青い空が広がる。", kana: "あおい そら が ひろがる", meaning: "蔚藍的天空延伸。" },
+                    { japanese: "部屋を掃除する。", kana: "へや を そうじ する", meaning: "打掃房間。" },
+                    { japanese: "外で遊ぶ。", kana: "そと で あそぶ", meaning: "在外面玩。" }
+                ]
+            },
+            {
+                id: "h_ta", char: "た", type: "hiragana", category: "seion", romaji: "ta", origin: "太",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">太</text></svg>`,
+                words: [
+                    { japanese: "卵", kana: "たまご", meaning: "雞蛋" },
+                    { japanese: "竹", kana: "たけ", meaning: "竹子" },
+                    { japanese: "太陽", kana: "たいよう", meaning: "太陽" }
+                ],
+                sentences: [
+                    { japanese: "毎朝卵を食べる。", kana: "まいあさ たまご を たべる", meaning: "每天早晨吃雞蛋。" },
+                    { japanese: "竹林を歩く。", kana: "たけばやし を あるく", meaning: "走在竹林裡。" },
+                    { japanese: "太陽が昇る。", kana: "たいよう が のぼる", meaning: "太陽升起。" }
+                ]
+            },
+            {
+                id: "h_chi", char: "ち", type: "hiragana", category: "seion", romaji: "chi", origin: "知",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">知</text></svg>`,
+                words: [
+                    { japanese: "地下鉄", kana: "ちかてつ", meaning: "地鐵" },
+                    { japanese: "地図", kana: "ちず", meaning: "地圖" },
+                    { japanese: "父", kana: "ちち", meaning: "父親" }
+                ],
+                sentences: [
+                    { japanese: "地下鉄に乗る。", kana: "ちかてつ に のる", meaning: "搭乘地鐵。" },
+                    { japanese: "地図を確認する。", kana: "ちず を かくにん する", meaning: "確認地圖。" },
+                    { japanese: "父は会社員です。", kana: "ちち は かいしゃいん です", meaning: "家父是上班族。" }
+                ]
+            },
+            {
+                id: "h_tsu", char: "つ", type: "hiragana", category: "seion", romaji: "tsu", origin: "川",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">川</text></svg>`,
+                words: [
+                    { japanese: "机", kana: "つくえ", meaning: "桌子" },
+                    { japanese: "月", kana: "つき", meaning: "月亮" },
+                    { japanese: "妻", kana: "つま", meaning: "妻子" }
+                ],
+                sentences: [
+                    { japanese: "机の上に本がある。", kana: "つくえ の うえ に ほん が ある", meaning: "桌上有書。" },
+                    { japanese: "今夜の月は綺麗だ。", kana: "こんや の つき は きれい だ", meaning: "今晚的月色真美。" },
+                    { japanese: "妻と一緒に買い物する。", kana: "つま と いっしょ に かいもの する", meaning: "和妻子一起購物。" }
+                ]
+            },
+            {
+                id: "h_te", char: "て", type: "hiragana", category: "seion", romaji: "te", origin: "天",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">天</text></svg>`,
+                words: [
+                    { japanese: "手", kana: "て", meaning: "手" },
+                    { japanese: "天氣", kana: "てんき", meaning: "天氣" },
+                    { japanese: "手紙", kana: "てがみ", meaning: "信件" }
+                ],
+                sentences: [
+                    { japanese: "手を洗います。", kana: "て を あらい ます", meaning: "洗手。" },
+                    { japanese: "今日はいい天気です。", kana: "きょう は いい てんき です", meaning: "今天天氣很好。" },
+                    { japanese: "友達に手紙を書く。", kana: "ともだち に てがみ を かく", meaning: "給朋友寫信。" }
+                ]
+            },
+            {
+                id: "h_to", char: "と", type: "hiragana", category: "seion", romaji: "to", origin: "止",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">止</text></svg>`,
+                words: [
+                    { japanese: "時計", kana: "とけい", meaning: "時鐘/手錶" },
+                    { japanese: "鳥", kana: "とり", meaning: "鳥" },
+                    { japanese: "友達", kana: "ともだち", meaning: "朋友" }
+                ],
+                sentences: [
+                    { japanese: "新しい時計を買った。", kana: "あたらしい とけい を かった", meaning: "買了新手錶。" },
+                    { japanese: "空を飛ぶ鳥。", kana: "そら を とぶ とり", meaning: "在空中飛翔的鳥。" },
+                    { japanese: "友達と遊ぶ。", kana: "ともだち と あそぶ", meaning: "和朋友玩。" }
+                ]
+            },
+            {
+                id: "h_na", char: "な", type: "hiragana", category: "seion", romaji: "na", origin: "奈",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">奈</text></svg>`,
+                words: [
+                    { japanese: "夏", kana: "なつ", meaning: "夏天" },
+                    { japanese: "波", kana: "なみ", meaning: "海浪" },
+                    { japanese: "名前", kana: "なまえ", meaning: "名字" }
+                ],
+                sentences: [
+                    { japanese: "夏休みが楽しみです。", kana: "なつやすみ が たのしみ です", meaning: "期待暑假。" },
+                    { japanese: "波の音が聞こえる。", kana: "なみ の おと が きこえる", meaning: "聽得到海浪聲。" },
+                    { japanese: "お名前は何ですか？", kana: "おなまえ は なん です か", meaning: "請問您叫什麼名字？" }
+                ]
+            },
+            {
+                id: "h_ni", char: "に", type: "hiragana", category: "seion", romaji: "ni", origin: "仁",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">仁</text></svg>`,
+                words: [
+                    { japanese: "肉", kana: "にく", meaning: "肉" },
+                    { japanese: "虹", kana: "にじ", meaning: "彩虹" },
+                    { japanese: "日本", kana: "にほん", meaning: "日本" }
+                ],
+                sentences: [
+                    { japanese: "美味しい肉料理。", kana: "おいしい にくりょうり", meaning: "美味的肉類料理。" },
+                    { japanese: "空に虹が出た。", kana: "そら に にじ が でた", meaning: "天空出現彩虹。" },
+                    { japanese: "日本に行きたい。", kana: "にほん に いきたい", meaning: "想去日本。" }
+                ]
+            },
+            {
+                id: "h_nu", char: "ぬ", type: "hiragana", category: "seion", romaji: "nu", origin: "奴",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">奴</text></svg>`,
+                words: [
+                    { japanese: "犬", kana: "いぬ", meaning: "狗" },
+                    { japanese: "布", kana: "ぬの", meaning: "布料" },
+                    { japanese: "沼", kana: "ぬま", meaning: "沼澤" }
+                ],
+                sentences: [
+                    { japanese: "可愛い犬。", kana: "かわいい いぬ", meaning: "可愛的小狗。" },
+                    { japanese: "柔らかい布。", kana: "やわらかい ぬの", meaning: "柔軟的布料。" },
+                    { japanese: "深い沼がある。", kana: "ふかい ぬま が ある", meaning: "有個很深的沼澤。" }
+                ]
+            },
+            {
+                id: "h_ne", char: "ね", type: "hiragana", category: "seion", romaji: "ne", origin: "禰",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">禰</text></svg>`,
+                words: [
+                    { japanese: "猫", kana: "ねこ", meaning: "貓" },
+                    { japanese: "熱", kana: "ねつ", meaning: "發燒/熱量" },
+                    { japanese: "値段", kana: "ねだん", meaning: "價格" }
+                ],
+                sentences: [
+                    { japanese: "猫が寝ている。", kana: "ねこ が ねている", meaning: "貓咪在睡覺。" },
+                    { japanese: "高熱が出る。", kana: "こうねつ が でる", meaning: "發高燒。" },
+                    { japanese: "値段を確認する。", kana: "ねだん を かくにん する", meaning: "確認價格。" }
+                ]
+            },
+            {
+                id: "h_no", char: "の", type: "hiragana", category: "seion", romaji: "no", origin: "乃",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">乃</text></svg>`,
+                words: [
+                    { japanese: "山", kana: "やまの", meaning: "山的" },
+                    { japanese: "飲み物", kana: "のみもの", meaning: "飲料" },
+                    { japanese: "海苔", kana: "のり", meaning: "海苔" }
+                ],
+                sentences: [
+                    { japanese: "山頂からの景色。", kana: "さんちょう からの けしき", meaning: "山頂的景色。" },
+                    { japanese: "冷たい飲み物。", kana: "つめたい のみもの", meaning: "冰涼的飲料。" },
+                    { japanese: "海苔を巻く。", kana: "のり を まく", meaning: "包海苔。" }
+                ]
+            },
+            {
+                id: "h_ha", char: "は", type: "hiragana", category: "seion", romaji: "ha", origin: "波",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">波</text></svg>`,
+                words: [
+                    { japanese: "花", kana: "はな", meaning: "花" },
+                    { japanese: "橋", kana: "はし", meaning: "橋" },
+                    { japanese: "箱", kana: "はこ", meaning: "盒子" }
+                ],
+                sentences: [
+                    { japanese: "綺麗な花が咲く。", kana: "きれい な はな が さく", meaning: "開出美麗的花朵。" },
+                    { japanese: "大きな橋を渡る。", kana: "おおきな はし を わたる", meaning: "過大橋。" },
+                    { japanese: "箱を開ける。", kana: "はこ を あける", meaning: "打開盒子。" }
+                ]
+            },
+            {
+                id: "h_hi", char: "ひ", type: "hiragana", category: "seion", romaji: "hi", origin: "比",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">比</text></svg>`,
+                words: [
+                    { japanese: "光", kana: "ひかり", meaning: "光芒" },
+                    { japanese: "飛行機", kana: "ひこうき", meaning: "飛機" },
+                    { japanese: "昼", kana: "ひる", meaning: "中午" }
+                ],
+                sentences: [
+                    { japanese: "太陽の光。", kana: "たいよう の ひかり", meaning: "太陽的光芒。" },
+                    { japanese: "飛行機に乗る。", kana: "ひこうき に のる", meaning: "坐飛機。" },
+                    { japanese: "昼ご飯を食べる。", kana: "ひるごはん を たべる", meaning: "吃午飯。" }
+                ]
+            },
+            {
+                id: "h_fu", char: "ふ", type: "hiragana", category: "seion", romaji: "fu", origin: "不",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">不</text></svg>`,
+                words: [
+                    { japanese: "船", kana: "ふね", meaning: "船" },
+                    { japanese: "冬", kana: "ふゆ", meaning: "冬天" },
+                    { japanese: "袋", kana: "ふくろ", meaning: "袋子" }
+                ],
+                sentences: [
+                    { japanese: "船が港に入る。", kana: "ふね が みなと に はいる", meaning: "船進港。" },
+                    { japanese: "冬は雪が降る。", kana: "ふゆ は ゆき が ふる", meaning: "冬天會下雪。" },
+                    { japanese: "買い物袋を持つ。", kana: "かいものぶくろ を もつ", meaning: "拿購物袋。" }
+                ]
+            },
+            {
+                id: "h_he", char: "へ", type: "hiragana", category: "seion", romaji: "he", origin: "部",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">部</text></svg>`,
+                words: [
+                    { japanese: "部屋", kana: "へや", meaning: "房間" },
+                    { japanese: "蛇", kana: "へび", meaning: "蛇" },
+                    { japanese: "下手", kana: "へた", meaning: "不擅長" }
+                ],
+                sentences: [
+                    { japanese: "広い部屋。", kana: "ひろい へや", meaning: "寬敞的房間。" },
+                    { japanese: "料理が下手です。", kana: "りょうり が へた です", meaning: "我不擅長做飯。" },
+                    { japanese: "前へ進む。", kana: "まえ へ すすむ", meaning: "向前推進。" }
+                ]
+            },
+            {
+                id: "h_ho", char: "ほ", type: "hiragana", category: "seion", romaji: "ho", origin: "保",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">保</text></svg>`,
+                words: [
+                    { japanese: "星", kana: "ほし", meaning: "星星" },
+                    { japanese: "本", kana: "ほん", meaning: "書本" },
+                    { japanese: "微笑顔", kana: "ほほえみ", meaning: "微笑" }
+                ],
+                sentences: [
+                    { japanese: "夜空に星が光る。", kana: "よぞら に ほし が ひかる", meaning: "夜空星光閃爍。" },
+                    { japanese: "面白い本を読む。", kana: "おもしろい ほん を よむ", meaning: "讀有趣的故事書。" },
+                    { japanese: "優しく微笑む。", kana: "やさしく ほほえむ", meaning: "溫柔地微笑。" }
+                ]
+            },
+            {
+                id: "h_ma", char: "ま", type: "hiragana", category: "seion", romaji: "ma", origin: "末",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">末</text></svg>`,
+                words: [
+                    { japanese: "町", kana: "まち", meaning: "城鎮" },
+                    { japanese: "窓", kana: "まど", meaning: "窗戶" },
+                    { japanese: "豆", kana: "まめ", meaning: "豆子" }
+                ],
+                sentences: [
+                    { japanese: "静かな町。", kana: "しずかな まち", meaning: "安靜的小鎮。" },
+                    { japanese: "窓を開ける。", kana: "まど を あける", meaning: "打開窗戶。" },
+                    { japanese: "豆を煮る。", kana: "まめ を にる", meaning: "煮豆子。" }
+                ]
+            },
+            {
+                id: "h_mi", char: "み", type: "hiragana", category: "seion", romaji: "mi", origin: "美",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">美</text></svg>`,
+                words: [
+                    { japanese: "水", kana: "みず", meaning: "水" },
+                    { japanese: "道", kana: "みち", meaning: "道路" },
+                    { japanese: "耳", kana: "みみ", meaning: "耳朵" }
+                ],
+                sentences: [
+                    { japanese: "冷たい水を飲む。", kana: "つめたい みず を のむ", meaning: "喝冰水。" },
+                    { japanese: "まっすぐな道。", kana: "まっすぐな みち", meaning: "筆直的道路。" },
+                    { japanese: "耳をすます。", kana: "みみ を すます", meaning: "洗耳恭聽/傾聽。" }
+                ]
+            },
+            {
+                id: "h_mu", char: "む", type: "hiragana", category: "seion", romaji: "mu", origin: "武",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">武</text></svg>`,
+                words: [
+                    { japanese: "虫", kana: "むし", meaning: "昆蟲" },
+                    { japanese: "村", kana: "むら", meaning: "村莊" },
+                    { japanese: "胸", kana: "むね", meaning: "胸口" }
+                ],
+                sentences: [
+                    { japanese: "夏の虫の音。", kana: "なつ の むし の おと", meaning: "夏天的蟲鳴。" },
+                    { japanese: "小さな村。", kana: "ちいさな むら", meaning: "小村莊。" },
+                    { japanese: "胸が高鳴る。", kana: "むね が たかなる", meaning: "心情激動/心跳加速。" }
+                ]
+            },
+            {
+                id: "h_me", char: "め", type: "hiragana", category: "seion", romaji: "me", origin: "女",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">女</text></svg>`,
+                words: [
+                    { japanese: "目", kana: "め", meaning: "眼睛" },
+                    { japanese: "眼鏡", kana: "めがね", meaning: "眼鏡" },
+                    { japanese: "雨", kana: "あめ", meaning: "雨" }
+                ],
+                sentences: [
+                    { japanese: "目が大きい。", kana: "め が おおきい", meaning: "眼睛很大。" },
+                    { japanese: "眼鏡をかける。", kana: "めがね を かける", meaning: "戴眼鏡。" },
+                    { japanese: "恵みの雨。", kana: "めぐみ の あめ", meaning: "恩澤的甘霖。" }
+                ]
+            },
+            {
+                id: "h_mo", char: "も", type: "hiragana", category: "seion", romaji: "mo", origin: "毛",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">毛</text></svg>`,
+                words: [
+                    { japanese: "桃", kana: "もも", meaning: "水蜜桃" },
+                    { japanese: "森", kana: "もり", meaning: "森林" },
+                    { japanese: "物", kana: "もの", meaning: "物品" }
+                ],
+                sentences: [
+                    { japanese: "甘い桃を食べる。", kana: "あまい もも を たべる", meaning: "吃甜桃。" },
+                    { japanese: "森を散歩する。", kana: "もり を さんぽ する", meaning: "在森林散步。" },
+                    { japanese: "大切な物。", kana: "たいせつ な もの", meaning: "重要的東西。" }
+                ]
+            },
+            {
+                id: "h_ya", char: "や", type: "hiragana", category: "seion", romaji: "ya", origin: "也",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">也</text></svg>`,
+                words: [
+                    { japanese: "山", kana: "やま", meaning: "山" },
+                    { japanese: "野菜", kana: "やさい", meaning: "蔬菜" },
+                    { japanese: "約束", kana: "やくそく", meaning: "約定" }
+                ],
+                sentences: [
+                    { japanese: "高い山に登る。", kana: "たかい やま に のぼる", meaning: "爬高山。" },
+                    { japanese: "新鮮な野菜を食べる。", kana: "しんせん な やさい を たべる", meaning: "吃新鮮蔬菜。" },
+                    { japanese: "友達と約束する。", kana: "ともだち と やくそく する", meaning: "與朋友約定。" }
+                ]
+            },
+            {
+                id: "h_yu", char: "ゆ", type: "hiragana", category: "seion", romaji: "yu", origin: "由",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">由</text></svg>`,
+                words: [
+                    { japanese: "雪", kana: "ゆき", meaning: "雪" },
+                    { japanese: "夢", kana: "ゆめ", meaning: "夢想" },
+                    { japanese: "指輪", kana: "ゆびわ", meaning: "戒指" }
+                ],
+                sentences: [
+                    { japanese: "白い雪が降る。", kana: "しろい ゆき が ふる", meaning: "下著白雪。" },
+                    { japanese: "大きな夢を持つ。", kana: "おおきな ゆめ を もつ", meaning: "懷抱遠大夢想。" },
+                    { japanese: "指輪をはめる。", kana: "ゆびわ を はめる", meaning: "戴上戒指。" }
+                ]
+            },
+            {
+                id: "h_yo", char: "よ", type: "hiragana", category: "seion", romaji: "yo", origin: "與",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">與</text></svg>`,
+                words: [
+                    { japanese: "夜", kana: "よる", meaning: "夜晚" },
+                    { japanese: "読む", kana: "よむ", meaning: "閱讀" },
+                    { japanese: "横", kana: "よこ", meaning: "旁邊" }
+                ],
+                sentences: [
+                    { japanese: "静かな夜。", kana: "しずかな よる", meaning: "寧靜的夜晚。" },
+                    { japanese: "毎晩本を読む。", kana: "まいばん ほん を よむ", meaning: "每晚看書。" },
+                    { japanese: "駅の横にある。", kana: "えき の よこ に ある", meaning: "在車站旁邊。" }
+                ]
+            },
+            {
+                id: "h_ra", char: "ら", type: "hiragana", category: "seion", romaji: "ra", origin: "良",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">良</text></svg>`,
+                words: [
+                    { japanese: "桜", kana: "さくら", meaning: "櫻花" },
+                    { japanese: "ライオン", kana: "らいおん", meaning: "獅子" },
+                    { japanese: "空", kana: "そら", meaning: "天空" }
+                ],
+                sentences: [
+                    { japanese: "桜が美しい。", kana: "さくら が うつくしい", meaning: "櫻花真美。" },
+                    { japanese: "ライオンを見る。", kana: "らいおん を みる", meaning: "看獅子。" },
+                    { japanese: "空を見上げる。", kana: "そら を みあげる", meaning: "仰望天空。" }
+                ]
+            },
+            {
+                id: "h_ri", char: "り", type: "hiragana", category: "seion", romaji: "ri", origin: "利",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">利</text></svg>`,
+                words: [
+                    { japanese: "林檎", kana: "りんご", meaning: "蘋果" },
+                    { japanese: "料理", kana: "りょうり", meaning: "料理" },
+                    { japanese: "旅行", kana: "りょこう", meaning: "旅行" }
+                ],
+                sentences: [
+                    { japanese: "赤い林檎を食べます。", kana: "あかい りんご を たべます", meaning: "吃紅蘋果。" },
+                    { japanese: "美味しい料理を作る。", kana: "おいしい りょうり を つくる", meaning: "做美味的料理。" },
+                    { japanese: "日本へ旅行する。", kana: "にほん へ りょこう する", meaning: "去日本旅行。" }
+                ]
+            },
+            {
+                id: "h_ru", char: "る", type: "hiragana", category: "seion", romaji: "ru", origin: "留",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">留</text></svg>`,
+                words: [
+                    { japanese: "留守", kana: "るす", meaning: "不在家" },
+                    { japanese: "車", kana: "くるま", meaning: "汽車" },
+                    { japanese: "見る", kana: "みる", meaning: "觀看" }
+                ],
+                sentences: [
+                    { japanese: "ただいま留守です。", kana: "ただいま るす です", meaning: "現在不在家。" },
+                    { japanese: "新しい車。", kana: "あたらしい くるま", meaning: "新車。" },
+                    { japanese: "テレビを見る。", kana: "てれび を みる", meaning: "看電視。" }
+                ]
+            },
+            {
+                id: "h_re", char: "れ", type: "hiragana", category: "seion", romaji: "re", origin: "禮",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">禮</text></svg>`,
+                words: [
+                    { japanese: "歴史", kana: "れきし", meaning: "歷史" },
+                    { japanese: "冷蔵庫", kana: "れいぞうこ", meaning: "冰箱" },
+                    { japanese: "練習", kana: "れんしゅう", meaning: "練習" }
+                ],
+                sentences: [
+                    { japanese: "日本の歴史を学ぶ。", kana: "にほん の れきし を まなぶ", meaning: "學習日本歷史。" },
+                    { japanese: "冷蔵庫にジュースがある。", kana: "れいぞうこ に じゅーす が ある", meaning: "冰箱裡有果汁。" },
+                    { japanese: "日本語を練習する。", kana: "にほんご を れんしゅう する", meaning: "練習日語。" }
+                ]
+            },
+            {
+                id: "h_ro", char: "ろ", type: "hiragana", category: "seion", romaji: "ro", origin: "呂",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">呂</text></svg>`,
+                words: [
+                    { japanese: "老人", kana: "ろうじん", meaning: "老人" },
+                    { japanese: "廊下", kana: "ろうか", meaning: "走廊" },
+                    { japanese: "風呂", kana: "ふろ", meaning: "浴室/澡堂" }
+                ],
+                sentences: [
+                    { japanese: "お風呂に入る。", kana: "おふろ に はいる", meaning: "洗澡。" },
+                    { japanese: "長い廊下を歩く。", kana: "ながい ろうか を あるく", meaning: "走在長廊上。" },
+                    { japanese: "親切な老人。", kana: "しんせつ な ろうじん", meaning: "和藹的老人。" }
+                ]
+            },
+            {
+                id: "h_wa", char: "わ", type: "hiragana", category: "seion", romaji: "wa", origin: "和",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">和</text></svg>`,
+                words: [
+                    { japanese: "私", kana: "わたし", meaning: "我" },
+                    { japanese: "鰐", kana: "わに", meaning: "鱷魚" },
+                    { japanese: "話", kana: "はなし", meaning: "故事/對話" }
+                ],
+                sentences: [
+                    { japanese: "私は学生です。", kana: "わたし は がくせい です", meaning: "我是學生。" },
+                    { japanese: "面白い話を聞く。", kana: "おもしろい はなし を きく", meaning: "聽有趣的故事。" },
+                    { japanese: "友達と笑う。", kana: "ともだち と わらう", meaning: "與朋友歡笑。" }
+                ]
+            },
+            {
+                id: "h_wo", char: "を", type: "hiragana", category: "seion", romaji: "wo", origin: "遠",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">遠</text></svg>`,
+                words: [
+                    { japanese: "本を読む", kana: "ほんをよむ", meaning: "讀書 (受詞助詞)" },
+                    { japanese: "水を見る", kana: "みずをみる", meaning: "看水" },
+                    { japanese: "ご飯を食べる", kana: "ごはんをたべる", meaning: "吃飯" }
+                ],
+                sentences: [
+                    { japanese: "音楽を聞きます。", kana: "おんがく を ききます", meaning: "聽音樂。" },
+                    { japanese: "手紙を書きます。", kana: "てがみ を かきます", meaning: "寫信。" },
+                    { japanese: "お茶を飲みます。", kana: "おちゃ を のみます", meaning: "喝茶。" }
+                ]
+            },
+            {
+                id: "h_n", char: "ん", type: "hiragana", category: "seion", romaji: "n", origin: "无",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">无</text></svg>`,
+                words: [
+                    { japanese: "本", kana: "ほん", meaning: "書本" },
+                    { japanese: "新聞", kana: "しんぶん", meaning: "報紙" },
+                    { japanese: "日本", kana: "にほん", meaning: "日本" }
+                ],
+                sentences: [
+                    { japanese: "本を読みます。", kana: "ほん を よみます", meaning: "看書。" },
+                    { japanese: "日本は綺麗です。", kana: "にほん は きれい です", meaning: "日本很漂亮。" },
+                    { japanese: "新幹線に乗る。", kana: "しんかんせん に のる", meaning: "乘坐新幹線。" }
+                ]
+            },
+
+            // ==========================================
+            // KATAKANA SEION (片假名 46清音)
+            // ==========================================
+            {
+                id: "k_a", char: "ア", type: "katakana", category: "seion", romaji: "a", origin: "阿",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">阿</text></svg>`,
+                words: [
+                    { japanese: "アイス", kana: "あいす", meaning: "冰淇淋" },
+                    { japanese: "アメリカ", kana: "あめりか", meaning: "美國" },
+                    { japanese: "アニメ", kana: "あにめ", meaning: "動畫" }
+                ],
+                sentences: [
+                    { japanese: "アイスを食べます。", kana: "あいす を たべます", meaning: "吃冰淇淋。" },
+                    { japanese: "アメリカへ行く。", kana: "あめりか へ いく", meaning: "去美國。" },
+                    { japanese: "日本のアニメが好き。", kana: "にほん の あにめ が すき", meaning: "喜歡日本動畫。" }
+                ]
+            },
+            {
+                id: "k_i", char: "イ", type: "katakana", category: "seion", romaji: "i", origin: "伊",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">伊</text></svg>`,
+                words: [
+                    { japanese: "イギリス", kana: "いぎりす", meaning: "英國" },
+                    { japanese: "イベント", kana: "いべんと", meaning: "活動/Event" },
+                    { japanese: "イメージ", kana: "いめーじ", meaning: "形象/印象" }
+                ],
+                sentences: [
+                    { japanese: "イギリスの紅茶。", kana: "いぎりす の こうちゃ", meaning: "英國紅茶。" },
+                    { japanese: "イベントに参加する。", kana: "いべんと に さんか する", meaning: "參加活動。" },
+                    { japanese: "良いイメージ。", kana: "よい いめーじ", meaning: "良好的形象。" }
+                ]
+            },
+            {
+                id: "k_u", char: "ウ", type: "katakana", category: "seion", romaji: "u", origin: "宇",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">宇</text></svg>`,
+                words: [
+                    { japanese: "ウェブ", kana: "うぇぶ", meaning: "網頁" },
+                    { japanese: "ウエイター", kana: "うえいたー", meaning: "男服務員" },
+                    { japanese: "ウクレレ", kana: "うくれれ", meaning: "烏克麗麗" }
+                ],
+                sentences: [
+                    { japanese: "ウェブサイトを見る。", kana: "うぇぶさいと を みる", meaning: "瀏覽網站。" },
+                    { japanese: "ウエイターを呼ぶ。", kana: "うえいたー を よぶ", meaning: "叫服務員。" },
+                    { japanese: "ウクレレを弾く。", kana: "うくれれ を ひく", meaning: "彈烏克麗麗。" }
+                ]
+            },
+            {
+                id: "k_e", char: "エ", type: "katakana", category: "seion", romaji: "e", origin: "江",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">江</text></svg>`,
+                words: [
+                    { japanese: "エアコン", kana: "えあこん", meaning: "空調/冷氣" },
+                    { japanese: "エレベーター", kana: "えれべーたー", meaning: "電梯" },
+                    { japanese: "エネルギー", kana: "えねるぎー", meaning: "能量/能源" }
+                ],
+                sentences: [
+                    { japanese: "エアコンをつける。", kana: "えあこん を つける", meaning: "開冷氣。" },
+                    { japanese: "エレベーターに乗る。", kana: "えれべーたー に のる", meaning: "搭電梯。" },
+                    { japanese: "エネルギーを補給する。", kana: "えねるぎー を ほきゅう する", meaning: "補充能量。" }
+                ]
+            },
+            {
+                id: "k_o", char: "オ", type: "katakana", category: "seion", romaji: "o", origin: "於",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">於</text></svg>`,
+                words: [
+                    { japanese: "オレンジ", kana: "おれんじ", meaning: "柳橙/橘色" },
+                    { japanese: "オフィス", kana: "おふぃす", meaning: "辦公室" },
+                    { japanese: "オリンピック", kana: "おりんぴっく", meaning: "奧運會" }
+                ],
+                sentences: [
+                    { japanese: "新鮮なオレンジジュース。", kana: "しんせん な おれんじ じゅーす", meaning: "新鮮柳橙汁。" },
+                    { japanese: "オフィスで働く。", kana: "おふぃす で はたらく", meaning: "在辦公室上班。" },
+                    { japanese: "オリンピックを見る。", kana: "おりんぴっく を みる", meaning: "看奧運賽事。" }
+                ]
+            },
+            {
+                id: "k_ka", char: "カ", type: "katakana", category: "seion", romaji: "ka", origin: "加",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">加</text></svg>`,
+                words: [
+                    { japanese: "カメラ", kana: "かめら", meaning: "相機" },
+                    { japanese: "カフェ", kana: "かふぇ", meaning: "咖啡廳" },
+                    { japanese: "カレー", kana: "かれー", meaning: "咖哩" }
+                ],
+                sentences: [
+                    { japanese: "カメラで写真を撮る。", kana: "かめら で しゃしん を とる", meaning: "用相機拍照。" },
+                    { japanese: "カフェで休む。", kana: "かふぇ で やすむ", meaning: "在咖啡館休息。" },
+                    { japanese: "美味しいカレーライス。", kana: "おいしい かれーらいす", meaning: "美味的咖哩飯。" }
+                ]
+            },
+            {
+                id: "k_ki", char: "キ", type: "katakana", category: "seion", romaji: "ki", origin: "幾",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">幾</text></svg>`,
+                words: [
+                    { japanese: "キャンプ", kana: "きゃんぷ", meaning: "露營" },
+                    { japanese: "キーボード", kana: "きーぼーど", meaning: "鍵盤" },
+                    { japanese: "キッチン", kana: "きっちん", meaning: "廚房" }
+                ],
+                sentences: [
+                    { japanese: "山でキャンプをする。", kana: "やま で きゃんぷ を する", meaning: "去山上露營。" },
+                    { japanese: "キーボードを打つ。", kana: "きーぼーど を うつ", meaning: "敲擊鍵盤。" },
+                    { japanese: "きれいなキッチン。", kana: "きれい な きっちん", meaning: "乾淨整潔的廚房。" }
+                ]
+            },
+            {
+                id: "k_ku", char: "ク", type: "katakana", category: "seion", romaji: "ku", origin: "久",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">久</text></svg>`,
+                words: [
+                    { japanese: "クラス", kana: "くらす", meaning: "班級" },
+                    { japanese: "タクシー", kana: "たくしー", meaning: "計程車" },
+                    { japanese: "クリーム", kana: "くりーむ", meaning: "鮮奶油" }
+                ],
+                sentences: [
+                    { japanese: "クラスの友達。", kana: "くらす の ともだち", meaning: "同班同學。" },
+                    { japanese: "タクシーに乗る。", kana: "たくしー に のる", meaning: "搭計程車。" },
+                    { japanese: "生クリームケーキ。", kana: "なまくりーむ けーき", meaning: "鮮奶油蛋糕。" }
+                ]
+            },
+            {
+                id: "k_ke", char: "ケ", type: "katakana", category: "seion", romaji: "ke", origin: "介",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">介</text></svg>`,
+                words: [
+                    { japanese: "ケーキ", kana: "けーき", meaning: "蛋糕" },
+                    { japanese: "ケース", kana: "けーす", meaning: "盒子/保護殼" },
+                    { japanese: "ケチャップ", kana: "けちゃっぷ", meaning: "番茄醬" }
+                ],
+                sentences: [
+                    { japanese: "誕生日ケーキ。", kana: "たんじょうび けーき", meaning: "生日蛋糕。" },
+                    { japanese: "スマホケースを買う。", kana: "すまほ けーす を かう", meaning: "買手機殼。" },
+                    { japanese: "ケチャップをかける。", kana: "けちゃっぷ を かける", meaning: "淋上番茄醬。" }
+                ]
+            },
+            {
+                id: "k_ko", char: "コ", type: "katakana", category: "seion", romaji: "ko", origin: "己",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">己</text></svg>`,
+                words: [
+                    { japanese: "コーヒー", kana: "こーひー", meaning: "咖啡" },
+                    { japanese: "コイン", kana: "こいん", meaning: "硬幣" },
+                    { japanese: "コンサート", kana: "こんさーと", meaning: "演唱會" }
+                ],
+                sentences: [
+                    { japanese: "ホットコーヒーを飲む。", kana: "ほっと こーひー を のむ", meaning: "喝熱咖啡。" },
+                    { japanese: "コインランドリー。", kana: "こいん らんどりー", meaning: "自助洗衣店。" },
+                    { japanese: "コンサートに行く。", kana: "こんさーと に いく", meaning: "去聽演唱會。" }
+                ]
+            },
+            {
+                id: "k_sa", char: "サ", type: "katakana", category: "seion", romaji: "sa", origin: "散",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">散</text></svg>`,
+                words: [
+                    { japanese: "サラダ", kana: "さらだ", meaning: "沙拉" },
+                    { japanese: "サイン", kana: "さいん", meaning: "簽名" },
+                    { japanese: "サッカー", kana: "さっかー", meaning: "足球" }
+                ],
+                sentences: [
+                    { japanese: "新鮮な野菜サラダ。", kana: "しんせん な やさい さらだ", meaning: "新鮮蔬菜沙拉。" },
+                    { japanese: "ここにサインしてください。", kana: "ここ に さいん して ください", meaning: "請在這裡簽名。" },
+                    { japanese: "サッカーをする。", kana: "さっかー を する", meaning: "踢足球。" }
+                ]
+            },
+            {
+                id: "k_shi", char: "シ", type: "katakana", category: "seion", romaji: "shi", origin: "之",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">之</text></svg>`,
+                words: [
+                    { japanese: "シャツ", kana: "しゃつ", meaning: "襯衫" },
+                    { japanese: "シャワー", kana: "しゃわー", meaning: "淋浴/蓮蓬頭" },
+                    { japanese: "システム", kana: "しすてむ", meaning: "系統" }
+                ],
+                sentences: [
+                    { japanese: "白いシャツを着る。", kana: "しろい しゃつ を きる", meaning: "穿白襯衫。" },
+                    { japanese: "シャワーを浴びる。", kana: "しゃわー を あびる", meaning: "沖澡。" },
+                    { japanese: "新しいシステム。", kana: "あたらしい しすてむ", meaning: "新系統。" }
+                ]
+            },
+            {
+                id: "k_su", char: "ス", type: "katakana", category: "seion", romaji: "su", origin: "須",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">須</text></svg>`,
+                words: [
+                    { japanese: "スポーツ", kana: "すぽーつ", meaning: "運動" },
+                    { japanese: "スーパー", kana: "すーぱー", meaning: "超級市場" },
+                    { japanese: "スプーン", kana: "すぷーん", meaning: "湯匙" }
+                ],
+                sentences: [
+                    { japanese: "スポーツが好きです。", kana: "すぽーつ が すき です", meaning: "我喜歡運動。" },
+                    { japanese: "スーパーで買い物する。", kana: "すーぱー で かいもの する", meaning: "在超市買東西。" },
+                    { japanese: "スプーンでスープを飲む。", kana: "すぷーん で すーぷ を のむ", meaning: "用湯匙喝湯。" }
+                ]
+            },
+            {
+                id: "k_se", char: "セ", type: "katakana", category: "seion", romaji: "se", origin: "世",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">世</text></svg>`,
+                words: [
+                    { japanese: "セーター", kana: "せーたー", meaning: "毛衣" },
+                    { japanese: "セール", kana: "せーる", meaning: "特賣/打折" },
+                    { japanese: "センター", kana: "せんたー", meaning: "中心" }
+                ],
+                sentences: [
+                    { japanese: "暖かいセーター。", kana: "あたたかい せーたー", meaning: "保暖的毛衣。" },
+                    { japanese: "バーゲンセール開催中。", kana: "ばーげん せーる かいさいちゅう", meaning: "特賣會舉行中。" },
+                    { japanese: "ショッピングセンター。", kana: "しょっぴんぐ せんたー", meaning: "購物中心。" }
+                ]
+            },
+            {
+                id: "k_so", char: "ソ", type: "katakana", category: "seion", romaji: "so", origin: "曾",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">曾</text></svg>`,
+                words: [
+                    { japanese: "ソファ", kana: "そふぁ", meaning: "沙發" },
+                    { japanese: "ソフト", kana: "そふと", meaning: "軟體/霜淇淋" },
+                    { japanese: "ソース", kana: "そーす", meaning: "醬汁" }
+                ],
+                sentences: [
+                    { japanese: "ソファでくつろぐ。", kana: "そふぁ で くつろぐ", meaning: "在沙發上放鬆。" },
+                    { japanese: "ソフトクリームを食べる。", kana: "そふとくりーむ を たべる", meaning: "吃霜淇淋。" },
+                    { japanese: "とんかつソース。", kana: "とんかつ そーす", meaning: "豬排醬。" }
+                ]
+            },
+            {
+                id: "k_ta", char: "タ", type: "katakana", category: "seion", romaji: "ta", origin: "多",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">多</text></svg>`,
+                words: [
+                    { japanese: "タオル", kana: "たおる", meaning: "毛巾" },
+                    { japanese: "タクシー", kana: "たくしー", meaning: "計程車" },
+                    { japanese: "タイプ", kana: "たいぷ", meaning: "類型/款式" }
+                ],
+                sentences: [
+                    { japanese: "柔らかいタオル。", kana: "やわらかい たおる", meaning: "柔軟的毛巾。" },
+                    { japanese: "タクシーを呼ぶ。", kana: "たくしー を よぶ", meaning: "叫計程車。" },
+                    { japanese: "新しいタイプの車。", kana: "あたらしい たいぷ の くるま", meaning: "新款式的汽車。" }
+                ]
+            },
+            {
+                id: "k_chi", char: "チ", type: "katakana", category: "seion", romaji: "chi", origin: "千",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">千</text></svg>`,
+                words: [
+                    { japanese: "チーズ", kana: "ちーず", meaning: "起司" },
+                    { japanese: "チケット", kana: "ちけっと", meaning: "票券" },
+                    { japanese: "チーム", kana: "ちーむ", meaning: "團隊" }
+                ],
+                sentences: [
+                    { japanese: "チーズケーキを作る。", kana: "ちーずけーき を つくる", meaning: "做起司蛋糕。" },
+                    { japanese: "映画のチケットを買う。", kana: "えいが の ちけっと を かう", meaning: "買電影票。" },
+                    { japanese: "強いチーム。", kana: "つよい ちーむ", meaning: "強大的團隊。" }
+                ]
+            },
+            {
+                id: "k_tsu", char: "ツ", type: "katakana", category: "seion", romaji: "tsu", origin: "川",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">川</text></svg>`,
+                words: [
+                    { japanese: "ツアー", kana: "つあー", meaning: "旅遊團/Tour" },
+                    { japanese: "スーツ", kana: "すーつ", meaning: "西裝" },
+                    { japanese: "ツール", kana: "つーる", meaning: "工具" }
+                ],
+                sentences: [
+                    { japanese: "日帰りツアー。", kana: "ひがえり つあー", meaning: "一日遊行程。" },
+                    { japanese: "新しいスーツを着る。", kana: "あたらしい すーつ を きる", meaning: "穿新西裝。" },
+                    { japanese: "便利なツール。", kana: "べんり な つーる", meaning: "便利的工具。" }
+                ]
+            },
+            {
+                id: "k_te", char: "テ", type: "katakana", category: "seion", romaji: "te", origin: "天",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">天</text></svg>`,
+                words: [
+                    { japanese: "テレビ", kana: "てれび", meaning: "電視" },
+                    { japanese: "テスト", kana: "てすと", meaning: "考試/測試" },
+                    { japanese: "テニス", kana: "てにす", meaning: "網球" }
+                ],
+                sentences: [
+                    { japanese: "テレビを見る。", kana: "てれび を みる", meaning: "看電視。" },
+                    { japanese: "明日はテストがあります。", kana: "あした は てすと が あります", meaning: "明天有考試。" },
+                    { japanese: "テニスをする。", kana: "てにす を する", meaning: "打網球。" }
+                ]
+            },
+            {
+                id: "k_to", char: "ト", type: "katakana", category: "seion", romaji: "to", origin: "止",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">止</text></svg>`,
+                words: [
+                    { japanese: "トマト", kana: "とまと", meaning: "番茄" },
+                    { japanese: "トイレ", kana: "といれ", meaning: "洗手間" },
+                    { japanese: "トラック", kana: "とらっく", meaning: "卡車" }
+                ],
+                sentences: [
+                    { japanese: "新鮮なトマト。", kana: "しんせん な とまと", meaning: "新鮮的番茄。" },
+                    { japanese: "トイレはどこですか？", kana: "といれ は どこ です か", meaning: "請問洗手間在哪裡？" },
+                    { japanese: "大きなトラック。", kana: "おおきな とらっく", meaning: "大卡車。" }
+                ]
+            },
+            {
+                id: "k_na", char: "ナ", type: "katakana", category: "seion", romaji: "na", origin: "奈",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">奈</text></svg>`,
+                words: [
+                    { japanese: "ナイフ", kana: "ないふ", meaning: "餐刀" },
+                    { japanese: "ナイト", kana: "ないと", meaning: "夜晚/騎士" },
+                    { japanese: "ナチュラル", kana: "なちゅらる", meaning: "自然的" }
+                ],
+                sentences: [
+                    { japanese: "ナイフとフォーク。", kana: "ないふ と ふぉーく", meaning: "刀叉。" },
+                    { japanese: "ナイトマーケットに行く。", kana: "ないと まーけっと に いく", meaning: "去夜市。" },
+                    { japanese: "ナチュラルなメイク。", kana: "なちゅらる な めいく", meaning: "裸妝/自然妝容。" }
+                ]
+            },
+            {
+                id: "k_ni", char: "ニ", type: "katakana", category: "seion", romaji: "ni", origin: "二",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">二</text></svg>`,
+                words: [
+                    { japanese: "ニュース", kana: "にゅーす", meaning: "新聞" },
+                    { japanese: "ニックネーム", kana: "にっくねーむ", meaning: "暱稱" },
+                    { japanese: "ニーズ", kana: "にーず", meaning: "需求" }
+                ],
+                sentences: [
+                    { japanese: "朝のニュースを見る。", kana: "あさ の にゅーす を みる", meaning: "看晨間新聞。" },
+                    { japanese: "ニックネームで呼ぶ。", kana: "にっくねーむ で よぶ", meaning: "叫綽號。" },
+                    { japanese: "顧客のニーズ。", kana: "こきゃく の にーず", meaning: "顧客的需求。" }
+                ]
+            },
+            {
+                id: "k_nu", char: "ヌ", type: "katakana", category: "seion", romaji: "nu", origin: "奴",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">奴</text></svg>`,
+                words: [
+                    { japanese: "ヌードル", kana: "ぬーどる", meaning: "麵條" },
+                    { japanese: "カヌー", kana: "かねー", meaning: "獨木舟" },
+                    { japanese: "スヌーピー", kana: "すぬーぴー", meaning: "史努比" }
+                ],
+                sentences: [
+                    { japanese: "カップヌードルを食べる。", kana: "かっぷぬーどる を たべる", meaning: "吃泡麵。" },
+                    { japanese: "カヌーに乗る。", kana: "かぬー に のる", meaning: "划獨木舟。" },
+                    { japanese: "可愛いスヌーピー。", kana: "かわいい すぬーぴー", meaning: "可愛的史努比。" }
+                ]
+            },
+            {
+                id: "k_ne", char: "ネ", type: "katakana", category: "seion", romaji: "ne", origin: "禰",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">禰</text></svg>`,
+                words: [
+                    { japanese: "ネクタイ", kana: "ねくたい", meaning: "領帶" },
+                    { japanese: "ネット", kana: "ねっと", meaning: "網路" },
+                    { japanese: "ノート", kana: "のーと", meaning: "筆記本" }
+                ],
+                sentences: [
+                    { japanese: "ネクタイを締める。", kana: "ねくたい を しめる", meaning: "打領帶。" },
+                    { japanese: "ネットで検索する。", kana: "ねっと で けんさく する", meaning: "在網路上搜尋。" },
+                    { japanese: "ノートに書く。", kana: "のーと に かく", meaning: "寫在筆記本上。" }
+                ]
+            },
+            {
+                id: "k_no", char: "ノ", type: "katakana", category: "seion", romaji: "no", origin: "乃",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">乃</text></svg>`,
+                words: [
+                    { japanese: "ノート", kana: "のーと", meaning: "筆記本" },
+                    { japanese: "ノック", kana: "のっく", meaning: "敲門" },
+                    { japanese: "ノルマ", kana: "のるま", meaning: "定額/配額" }
+                ],
+                sentences: [
+                    { japanese: "ドアをノックする。", kana: "どあ を のっく する", meaning: "敲門。" },
+                    { japanese: "新しいパソコンノート。", kana: "あたらしい ぱそこん のーと", meaning: "新筆記型電腦。" },
+                    { japanese: "ノルマを達成する。", kana: "のるま を たっせい する", meaning: "達成業績目標。" }
+                ]
+            },
+            {
+                id: "k_ha", char: "ハ", type: "katakana", category: "seion", romaji: "ha", origin: "八",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">八</text></svg>`,
+                words: [
+                    { japanese: "ハンバーガー", kana: "はんばーがー", meaning: "漢堡" },
+                    { japanese: "ハワイ", kana: "はわい", meaning: "夏威夷" },
+                    { japanese: "ハート", kana: "はーと", meaning: "心形" }
+                ],
+                sentences: [
+                    { japanese: "ハンバーガーを食べる。", kana: "はんばーがー を たべる", meaning: "吃漢堡。" },
+                    { japanese: "ハワイへ旅行する。", kana: "はわい へ りょこう する", meaning: "去夏威夷旅行。" },
+                    { japanese: "ハートのマーク。", kana: "はーと の まーく", meaning: "愛心圖案。" }
+                ]
+            },
+            {
+                id: "k_hi", char: "ヒ", type: "katakana", category: "seion", romaji: "hi", origin: "比",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">比</text></svg>`,
+                words: [
+                    { japanese: "ヒーロー", kana: "ひーろー", meaning: "英雄" },
+                    { japanese: "ヒーター", kana: "ひーたー", meaning: "暖氣機" },
+                    { japanese: "ヒント", kana: "ひんと", meaning: "提示" }
+                ],
+                sentences: [
+                    { japanese: "映画のヒーロー。", kana: "えいが の ひーろー", meaning: "電影裡的英雄。" },
+                    { japanese: "ヒーターをつける。", kana: "ひーたー を つける", meaning: "開暖氣。" },
+                    { japanese: "ヒントを与える。", kana: "ひんと を あたえる", meaning: "給予提示。" }
+                ]
+            },
+            {
+                id: "k_fu", char: "フ", type: "katakana", category: "seion", romaji: "fu", origin: "不",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">不</text></svg>`,
+                words: [
+                    { japanese: "フルーツ", kana: "ふるーつ", meaning: "水果" },
+                    { japanese: "フォーク", kana: "ふぉーく", meaning: "餐叉" },
+                    { japanese: "ファン", kana: "ふぁん", meaning: "粉絲/風扇" }
+                ],
+                sentences: [
+                    { japanese: "新鮮なフルーツパフェ。", kana: "しんせん な ふるーつ ぱふぇ", meaning: "新鮮水果聖代。" },
+                    { japanese: "ナイフとフォーク。", kana: "ないふ と ふぉーく", meaning: "刀與叉。" },
+                    { japanese: "アニメのファン。", kana: "あにめ の ふぁん", meaning: "動畫粉絲。" }
+                ]
+            },
+            {
+                id: "k_he", char: "ヘ", type: "katakana", category: "seion", romaji: "he", origin: "部",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">部</text></svg>`,
+                words: [
+                    { japanese: "ヘリコプター", kana: "へりこぷたー", meaning: "直升機" },
+                    { japanese: "ヘッドホン", kana: "へっどほん", meaning: "頭戴式耳機" },
+                    { japanese: "ヘルシー", kana: "へるしー", meaning: "健康的" }
+                ],
+                sentences: [
+                    { japanese: "ヘリコプターが飛ぶ。", kana: "へりこぷたー が とぶ", meaning: "直升機起飛。" },
+                    { japanese: "ヘッドホンで音楽を聞く。", kana: "へっどほん で おんがく を きく", meaning: "用耳機聽音樂。" },
+                    { japanese: "ヘルシーな料理。", kana: "へるしー な りょうり", meaning: "健康養生的料理。" }
+                ]
+            },
+            {
+                id: "k_ho", char: "ホ", type: "katakana", category: "seion", romaji: "ho", origin: "保",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">保</text></svg>`,
+                words: [
+                    { japanese: "ホテル", kana: "ほてる", meaning: "飯店" },
+                    { japanese: "ホーム", kana: "ほーむ", meaning: "月台/家" },
+                    { japanese: "ホワイト", kana: "ほわいと", meaning: "白色" }
+                ],
+                sentences: [
+                    { japanese: "高級ホテルに泊まる。", kana: "こうきゅう ほてる に とまる", meaning: "入住高級飯店。" },
+                    { japanese: "駅のホームで待つ。", kana: "えき の ほーむ で まつ", meaning: "在車站月台等待。" },
+                    { japanese: "ホワイトクリスマス。", kana: "ほわいと くりすます", meaning: "白色聖誕節。" }
+                ]
+            },
+            {
+                id: "k_ma", char: "マ", type: "katakana", category: "seion", romaji: "ma", origin: "末",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">末</text></svg>`,
+                words: [
+                    { japanese: "マイク", kana: "まいく", meaning: "麥克風" },
+                    { japanese: "マスク", kana: "ますく", meaning: "口罩" },
+                    { japanese: "マンション", kana: "まんしょん", meaning: "高級公寓" }
+                ],
+                sentences: [
+                    { japanese: "マイクで話す。", kana: "まいく で はなす", meaning: "用麥克風講話。" },
+                    { japanese: "マスクを着ける。", kana: "ますく を つける", meaning: "戴上口罩。" },
+                    { japanese: "新しいマンション。", kana: "あたらしい まんしょん", meaning: "新建的公寓大樓。" }
+                ]
+            },
+            {
+                id: "k_mi", char: "ミ", type: "katakana", category: "seion", romaji: "mi", origin: "三",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">三</text></svg>`,
+                words: [
+                    { japanese: "ミルク", kana: "みるく", meaning: "牛奶" },
+                    { japanese: "ミュージアム", kana: "みゅーじあむ", meaning: "博物館" },
+                    { japanese: "ミイント", kana: "みんと", meaning: "薄荷" }
+                ],
+                sentences: [
+                    { japanese: "温かいミルク。", kana: "あたたかい みるく", meaning: "溫牛奶。" },
+                    { japanese: "美術ミュージアム。", kana: "びじゅつ みゅーじあむ", meaning: "美術館博物館。" },
+                    { japanese: "ミントの香り。", kana: "みんと の かおり", meaning: "薄荷的香氣。" }
+                ]
+            },
+            {
+                id: "k_mu", char: "ム", type: "katakana", category: "seion", romaji: "mu", origin: "牟",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">牟</text></svg>`,
+                words: [
+                    { japanese: "ムービー", kana: "むーびー", meaning: "影片" },
+                    { japanese: "チーム", kana: "ちーむ", meaning: "團隊" },
+                    { japanese: "ガム", kana: "がむ", meaning: "口香糖" }
+                ],
+                sentences: [
+                    { japanese: "ショートムービーを見る。", kana: "しょーと むーびー を みる", meaning: "看短影音。" },
+                    { japanese: "強いチーム。", kana: "つよい ちーむ", meaning: "強大的團隊。" },
+                    { japanese: "チューインガムを噛む。", kana: "ちゅーいんがむ を かむ", meaning: "嚼口香糖。" }
+                ]
+            },
+            {
+                id: "k_me", char: "メ", type: "katakana", category: "seion", romaji: "me", origin: "女",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">女</text></svg>`,
+                words: [
+                    { japanese: "メニュー", kana: "めにゅー", meaning: "菜單" },
+                    { japanese: "メール", kana: "めーる", meaning: "電子郵件" },
+                    { japanese: "メッセージ", kana: "めっせーじ", meaning: "訊息" }
+                ],
+                sentences: [
+                    { japanese: "メニューを見る。", kana: "めにゅー を みる", meaning: "看菜單。" },
+                    { japanese: "メールを送る。", kana: "めーる を おくる", meaning: "寄電子郵件。" },
+                    { japanese: "メッセージを送信する。", kana: "めっせーじ を そうしん する", meaning: "發送訊息。" }
+                ]
+            },
+            {
+                id: "k_mo", char: "モ", type: "katakana", category: "seion", romaji: "mo", origin: "毛",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">毛</text></svg>`,
+                words: [
+                    { japanese: "モデル", kana: "もでる", meaning: "模特兒/模型" },
+                    { japanese: "モニター", kana: "もにたー", meaning: "顯示器/螢幕" },
+                    { japanese: "モバイル", kana: "もばいる", meaning: "行動裝置/手機" }
+                ],
+                sentences: [
+                    { japanese: "ファッションモデル。", kana: "ふぁっしょん もでる", meaning: "時裝模特兒。" },
+                    { japanese: "PCのモニター。", kana: "ぴーしー の もにたー", meaning: "電腦螢幕。" },
+                    { japanese: "モバイルバッテリー。", kana: "もばいる ばったりー", meaning: "行動電源。" }
+                ]
+            },
+            {
+                id: "k_ya", char: "ヤ", type: "katakana", category: "seion", romaji: "ya", origin: "也",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">也</text></svg>`,
+                words: [
+                    { japanese: "ダイヤ", kana: "だいや", meaning: "鑽石/時刻表" },
+                    { japanese: "ヤシ", kana: "やし", meaning: "椰子樹" },
+                    { japanese: "タイヤ", kana: "たいや", meaning: "輪胎" }
+                ],
+                sentences: [
+                    { japanese: "ダイヤの指輪。", kana: "だいや の ゆびわ", meaning: "鑽石戒指。" },
+                    { japanese: "車のタイヤを交換する。", kana: "くるま の タイヤ を こうかん する", meaning: "更換汽車輪胎。" },
+                    { japanese: "ヤシの木がある海。", kana: "やし の き が ある うみ", meaning: "有椰子樹的大海。" }
+                ]
+            },
+            {
+                id: "k_yu", char: "ユ", type: "katakana", category: "seion", romaji: "yu", origin: "由",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">由</text></svg>`,
+                words: [
+                    { japanese: "ユニフォーム", kana: "ゆにふぉーむ", meaning: "制服" },
+                    { japanese: "ユーザー", kana: "ゆーざー", meaning: "使用者/用戶" },
+                    { japanese: "ユーモア", kana: "ゆーもあ", meaning: "幽默" }
+                ],
+                sentences: [
+                    { japanese: "サッカーのユニフォーム。", kana: "さっかー の ゆにふぉーむ", meaning: "足球隊制服。" },
+                    { japanese: "ユーザー登録。", kana: "ゆーざー とうろく", meaning: "使用者註冊。" },
+                    { japanese: "ユーモアがある人。", kana: "ゆーもあ が ある ひと", meaning: "幽默風趣的人。" }
+                ]
+            },
+            {
+                id: "k_yo", char: "ヨ", type: "katakana", category: "seion", romaji: "yo", origin: "與",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">與</text></svg>`,
+                words: [
+                    { japanese: "ヨーグルト", kana: "よーぐると", meaning: "優格" },
+                    { japanese: "ヨガ", kana: "よが", meaning: "瑜珈" },
+                    { japanese: "ヨーロッパ", kana: "よーろっぱ", meaning: "歐洲" }
+                ],
+                sentences: [
+                    { japanese: "朝食にヨーグルト。", kana: "ちょうしょく に よーぐると", meaning: "早餐吃優格。" },
+                    { japanese: "毎朝ヨガをする。", kana: "まいあさ よが を する", meaning: "每天早晨做瑜珈。" },
+                    { japanese: "ヨーロッパへ旅行する。", kana: "よーろっぱ へ りょこう する", meaning: "去歐洲旅行。" }
+                ]
+            },
+            {
+                id: "k_ra", char: "ラ", type: "katakana", category: "seion", romaji: "ra", origin: "良",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">良</text></svg>`,
+                words: [
+                    { japanese: "ラーメン", kana: "らーめん", meaning: "拉麵" },
+                    { japanese: "ラジオ", kana: "らじお", meaning: "廣播" },
+                    { japanese: "ライト", kana: "らいと", meaning: "燈光/輕巧" }
+                ],
+                sentences: [
+                    { japanese: "温かいラーメンを食べる。", kana: "あたたかい らーめん を たべる", meaning: "吃熱騰騰的拉麵。" },
+                    { japanese: "ラジオを聞く。", kana: "らじお を きく", meaning: "聽廣播。" },
+                    { japanese: "ライトをつける。", kana: "らいと を つける", meaning: "開燈。" }
+                ]
+            },
+            {
+                id: "k_ri", char: "リ", type: "katakana", category: "seion", romaji: "ri", origin: "利",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">利</text></svg>`,
+                words: [
+                    { japanese: "リンゴ", kana: "りんご", meaning: "蘋果" },
+                    { japanese: "リボン", kana: "りぼん", meaning: "緞帶" },
+                    { japanese: "リモコン", kana: "りもこん", meaning: "遙控器" }
+                ],
+                sentences: [
+                    { japanese: "赤くて甘いリンゴ。", kana: "あかくて あまい りんご", meaning: "又紅又甜的蘋果。" },
+                    { japanese: "髪にリボンを結ぶ。", kana: "かみ に りぼん を むすぶ", meaning: "在頭上繫緞帶。" },
+                    { japanese: "テレビのリモコン。", kana: "てれび の りもこん", meaning: "電視遙控器。" }
+                ]
+            },
+            {
+                id: "k_ru", char: "ル", type: "katakana", category: "seion", romaji: "ru", origin: "流",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">流</text></svg>`,
+                words: [
+                    { japanese: "ルール", kana: "るーる", meaning: "規則" },
+                    { japanese: "ルビー", kana: "るびー", meaning: "紅寶石" },
+                    { japanese: "ルーム", kana: "るーむ", meaning: "房間" }
+                ],
+                sentences: [
+                    { japanese: "交通ルールを守る。", kana: "こうつう るーる を まもる", meaning: "遵守交通規則。" },
+                    { japanese: "赤いルビーの指輪。", kana: "あかい るびー の ゆびわ", meaning: "紅寶石戒指。" },
+                    { japanese: "ホテルのルームキー。", kana: "ほてる の るーむきー", meaning: "飯店房卡。" }
+                ]
+            },
+            {
+                id: "k_re", char: "レ", type: "katakana", category: "seion", romaji: "re", origin: "禮",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">禮</text></svg>`,
+                words: [
+                    { japanese: "レストラン", kana: "れすとらん", meaning: "餐廳" },
+                    { japanese: "レモン", kana: "れもん", meaning: "檸檬" },
+                    { japanese: "レシート", kana: "れしーと", meaning: "收據/發票" }
+                ],
+                sentences: [
+                    { japanese: "レストランで外食する。", kana: "れすとらん で がいしょく する", meaning: "在餐廳用餐。" },
+                    { japanese: "酸っぱいレモン。", kana: "すっぱい れもん", meaning: "酸檸檬。" },
+                    { japanese: "レシートをもらう。", kana: "れしーと を もらう", meaning: "索取發票。" }
+                ]
+            },
+            {
+                id: "k_ro", char: "ロ", type: "katakana", category: "seion", romaji: "ro", origin: "呂",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">呂</text></svg>`,
+                words: [
+                    { japanese: "ロボット", kana: "ろぼっと", meaning: "機器人" },
+                    { japanese: "ロケット", kana: "ろけっと", meaning: "火箭" },
+                    { japanese: "ロビー", kana: "ろびー", meaning: "大廳" }
+                ],
+                sentences: [
+                    { japanese: "AIロボットが働く。", kana: "えーあい ろぼっと が はたらく", meaning: "AI機器人工作。" },
+                    { japanese: "宇宙へ飛ぶロケット。", kana: "うちゅう へ とぶ ろけっと", meaning: "飛向太空的火箭。" },
+                    { japanese: "ホテルのロビーで集合。", kana: "ほてる の ろびー で しゅうごう", meaning: "在飯店大廳集合。" }
+                ]
+            },
+            {
+                id: "k_wa", char: "ワ", type: "katakana", category: "seion", romaji: "wa", origin: "和",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">和</text></svg>`,
+                words: [
+                    { japanese: "ワイン", kana: "わいん", meaning: "葡萄酒" },
+                    { japanese: "ワイシャツ", kana: "わいしゃつ", meaning: "男士襯衫" },
+                    { japanese: "ワールド", kana: "わーるど", meaning: "世界" }
+                ],
+                sentences: [
+                    { japanese: "赤ワインを飲む。", kana: "あか わいん を のむ", meaning: "喝紅葡萄酒。" },
+                    { japanese: "白いワイシャツ。", kana: "しろい わいしゃつ", meaning: "白襯衫。" },
+                    { japanese: "ワールドカップを見る。", kana: "わーるどかっぷ を みる", meaning: "觀看世界盃。" }
+                ]
+            },
+            {
+                id: "k_wo", char: "ヲ", type: "katakana", category: "seion", romaji: "wo", origin: "乎",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">乎</text></svg>`,
+                words: [
+                    { japanese: "ヲタク", kana: "おたく", meaning: "禦宅族" },
+                    { japanese: "ヲ", kana: "を", meaning: "助詞 (現代片假名極少單獨作字)" },
+                    { japanese: "ヲタ活", kana: "おたかつ", meaning: "追星/宅活" }
+                ],
+                sentences: [
+                    { japanese: "アニメヲタクです。", kana: "あにめ おたく です", meaning: "我是動漫宅。" },
+                    { japanese: "ヲタ活を楽しむ。", kana: "おたかつ を たのしむ", meaning: "享受追星/宅文化活動。" },
+                    { japanese: "ヲは助詞の「を」に相當。", kana: "を は じょし の を に そうとう", meaning: "ヲ相當於助詞的「を」。" }
+                ]
+            },
+            {
+                id: "k_n", char: "ン", type: "katakana", category: "seion", romaji: "n", origin: "尓",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#2563eb">尓</text></svg>`,
+                words: [
+                    { japanese: "パン", kana: "ぱん", meaning: "麵包" },
+                    { japanese: "コイン", kana: "こいん", meaning: "硬幣" },
+                    { japanese: "サイン", kana: "さいん", meaning: "簽名" }
+                ],
+                sentences: [
+                    { japanese: "焼きたてパンを食べる。", kana: "やきたて ぱん を たべる", meaning: "吃現烤麵包。" },
+                    { japanese: "コインを入れる。", kana: "こいん を いれる", meaning: "投幣。" },
+                    { japanese: "サインをもらう。", kana: "さいん を もらう", meaning: "索取簽名。" }
+                ]
+            },
+
+            // ==========================================
+            // DAKUON SAMPLE (濁音 / 半濁音 範例)
+            // ==========================================
+            {
+                id: "h_ga", char: "が", type: "hiragana", category: "dakuon", romaji: "ga", origin: "加",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">が</text></svg>`,
+                words: [
+                    { japanese: "学校", kana: "がっこう", meaning: "學校" },
+                    { japanese: "外国", kana: "がいこく", meaning: "外國" },
+                    { japanese: "画像", kana: "がぞう", meaning: "圖片" }
+                ],
+                sentences: [
+                    { japanese: "毎朝学校へ行く。", kana: "まいあさ がっこう へ いく", meaning: "每天早晨去上學。" },
+                    { japanese: "外国旅行をする。", kana: "がいこくりょこう を する", meaning: "去國外旅行。" },
+                    { japanese: "きれいな画像。", kana: "きれい な がぞう", meaning: "清晰美麗的圖片。" }
+                ]
+            },
+            {
+                id: "h_gi", char: "ぎ", type: "hiragana", category: "dakuon", romaji: "gi", origin: "幾",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">ぎ</text></svg>`,
+                words: [
+                    { japanese: "銀行", kana: "ぎんこう", meaning: "銀行" },
+                    { japanese: "牛乳", kana: "ぎゅうにゅう", meaning: "牛奶" },
+                    { japanese: "金魚", kana: "きんぎょ", meaning: "金魚" }
+                ],
+                sentences: [
+                    { japanese: "銀行でお金を下ろす。", kana: "ぎんこう で おかね を おろす", meaning: "在銀行領錢。" },
+                    { japanese: "朝牛乳を飲む。", kana: "あさ ぎゅうにゅう を のむ", meaning: "早上喝牛奶。" },
+                    { japanese: "可愛い金魚。", kana: "かわいい きんぎょ", meaning: "小巧可愛的金魚。" }
+                ]
+            },
+            {
+                id: "h_pa", char: "ぱ", type: "hiragana", category: "dakuon", romaji: "pa", origin: "波",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">ぱ</text></svg>`,
+                words: [
+                    { japanese: "パン", kana: "ぱん", meaning: "麵包" },
+                    { japanese: "パトカー", kana: "ぱとかー", meaning: "警車" },
+                    { japanese: "パパ", kana: "ぱぱ", meaning: "爸爸" }
+                ],
+                sentences: [
+                    { japanese: "美味しいパンを焼く。", kana: "おいしい ぱん を やく", meaning: "烤美味的麵包。" },
+                    { japanese: "パトカーが通る。", kana: "ぱとかー が とおる", meaning: "警車經過。" },
+                    { japanese: "パパと遊ぶ。", kana: "ぱぱ と あそぶ", meaning: "和爸爸玩。" }
+                ]
+            },
+
+            // ==========================================
+            // YOUON SAMPLE (拗音 範例)
+            // ==========================================
+            {
+                id: "h_kya", char: "きゃ", type: "hiragana", category: "youon", romaji: "kya", origin: "客",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">きゃ</text></svg>`,
+                words: [
+                    { japanese: "客", kana: "きゃく", meaning: "客人" },
+                    { japanese: "キャンプ", kana: "きゃんぷ", meaning: "露營" },
+                    { japanese: "キャベツ", kana: "きゃべつ", meaning: "高麗菜" }
+                ],
+                sentences: [
+                    { japanese: "お客様が来る。", kana: "おきゃくさま が くる", meaning: "客人要來。" },
+                    { japanese: "山でキャンプする。", kana: "やま で きゃんぷ する", meaning: "在山裡露營。" },
+                    { japanese: "千切りキャベツ。", kana: "せんぎり きゃべつ", meaning: "高麗菜絲。" }
+                ]
+            },
+            {
+                id: "h_shu", char: "しゅ", type: "hiragana", category: "youon", romaji: "shu", origin: "手",
+                svgIcon: `<svg viewBox="0 0 100 100" class="w-8 h-8"><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="bold" fill="#ee3663">しゅ</text></svg>`,
+                words: [
+                    { japanese: "宿題", kana: "しゅくだい", meaning: "作業" },
+                    { japanese: "趣味", kana: "しゅみ", meaning: "興趣" },
+                    { japanese: "手術", kana: "しゅじゅつ", meaning: "手術" }
+                ],
+                sentences: [
+                    { japanese: "宿題を終わらせる。", kana: "しゅくだい を おわらせる", meaning: "完成功課。" },
+                    { japanese: "私の趣味は読書です。", kana: "わたし の しゅみ は どくしょ です", meaning: "我的興趣是閱讀。" },
+                    { japanese: "手術が成功する。", kana: "しゅじゅつ が せいこう する", meaning: "手術順利成功。" }
+                ]
+            }
+        ];
+
+        let state = {
+            currentTab: 'learn',
+            kanaType: 'hiragana', // 'hiragana' or 'katakana'
+            categoryFilter: 'all', // 'all', 'seion', 'dakuon', 'youon'
+            masteredIds: JSON.parse(localStorage.getItem('kana_mastered') || '[]'),
+            streakDays: parseInt(localStorage.getItem('kana_streak') || '1'),
+            lastStudyDate: localStorage.getItem('kana_last_date') || '',
+            highScore: parseInt(localStorage.getItem('kana_highscore') || '0'),
+            activeModalKana: null,
+            
+            // Quiz State
+            quizRange: 'all',
+            quizQuestions: [],
+            quizIndex: 0,
+            quizScore: 0,
+            quizWrong: []
+        };
+
+        function speakJapanese(text) {
+            if (!('speechSynthesis' in window)) {
+                alert('您的瀏覽器不支援 Web Speech 語音朗讀功能');
+                return;
+            }
+            window.speechSynthesis.cancel(); // Stop current playing
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ja-JP';
+            utterance.rate = 0.9; // Slightly slower for language learners
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function playSampleAudio() {
+            speakJapanese('こんにちは！日本語の勉強を始めましょう');
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+            
+            // Hide all tabs
+            ['learn', 'quiz', 'progress', 'search'].forEach(tab => {
+                document.getElementById(`tab-${tab}`).classList.add('hidden');
+                const btn = document.getElementById(`tabBtn-${tab}`);
+                btn.classList.remove('text-sakura-500', 'font-bold');
+                btn.classList.add('text-slate-400');
+            });
+
+            // Show selected tab
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+            activeBtn.classList.remove('text-slate-400');
+            activeBtn.classList.add('text-sakura-500', 'font-bold');
+
+            // Update Header Title
+            const titles = {
+                learn: '假名學習庫',
+                quiz: '隨機測驗',
+                progress: '學習進度',
+                search: '假名速查'
+            };
+            document.getElementById('headerTitle').innerText = titles[tabName];
+
+            if (tabName === 'progress') updateProgressTab();
+            if (tabName === 'search') handleSearch();
+        }
+
+        function switchKanaType(type) {
+            state.kanaType = type;
+            const btnHira = document.getElementById('btn-hiragana');
+            const btnKata = document.getElementById('btn-katakana');
+
+            if (type === 'hiragana') {
+                btnHira.className = "flex-1 py-2 rounded-xl bg-white text-sakura-600 shadow-sm transition-all duration-200 text-center font-bold";
+                btnKata.className = "flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-800 transition-all duration-200 text-center font-normal";
+            } else {
+                btnKata.className = "flex-1 py-2 rounded-xl bg-white text-fuji-600 shadow-sm transition-all duration-200 text-center font-bold";
+                btnHira.className = "flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-800 transition-all duration-200 text-center font-normal";
+            }
+            renderKanaGrid();
+        }
+
+        function filterCategory(cat) {
+            state.categoryFilter = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.className = "cat-btn px-4 py-1.5 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 whitespace-nowrap";
+            });
+            const active = document.getElementById(`cat-${cat}`);
+            if (active) {
+                active.className = "cat-btn px-4 py-1.5 rounded-full text-xs font-medium bg-slate-800 text-white shadow-sm whitespace-nowrap";
+            }
+            renderKanaGrid();
+        }
+
+        function renderKanaGrid() {
+            const grid = document.getElementById('kanaGrid');
+            grid.innerHTML = '';
+
+            const filtered = KANA_DATABASE.filter(item => {
+                const matchType = item.type === state.kanaType;
+                const matchCat = state.categoryFilter === 'all' || item.category === state.categoryFilter;
+                return matchType && matchCat;
+            });
+
+            // Update current mastery counter
+            const totalCount = filtered.length;
+            const masteredCount = filtered.filter(item => state.masteredIds.includes(item.id)).length;
+            const percent = totalCount > 0 ? Math.round((masteredCount / totalCount) * 100) : 0;
+            document.getElementById('currentMasteryText').innerText = `${masteredCount} / ${totalCount} (${percent}%)`;
+            document.getElementById('currentMasteryBar').style.width = `${percent}%`;
+
+            filtered.forEach(item => {
+                const isMastered = state.masteredIds.includes(item.id);
+                const card = document.createElement('div');
+                card.onclick = () => openModal(item);
+                card.className = `active-scale relative bg-white p-3 rounded-2xl border ${isMastered ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-100'} shadow-sm flex flex-col items-center justify-center cursor-pointer transition`;
+                
+                card.innerHTML = `
+                    ${isMastered ? '<i class="fa-solid fa-circle-check absolute top-1.5 right-1.5 text-emerald-500 text-xs"></i>' : ''}
+                    <div class="text-2xl font-black ${item.type === 'hiragana' ? 'text-slate-800' : 'text-fuji-600'}">${item.char}</div>
+                    <div class="text-[10px] font-bold text-slate-400 mt-0.5">${item.romaji}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openModal(kanaItem) {
+            state.activeModalKana = kanaItem;
+            
+            document.getElementById('modalTypeBadge').innerText = `${kanaItem.type === 'hiragana' ? '平假名' : '片假名'} • ${kanaItem.category.toUpperCase()}`;
+            document.getElementById('modalChar').innerText = kanaItem.char;
+            document.getElementById('modalRomaji').innerText = kanaItem.romaji;
+            document.getElementById('modalOrigin').innerText = `源自：${kanaItem.origin}`;
+            document.getElementById('modalSvgGraphic').innerHTML = kanaItem.svgIcon || kanaItem.origin;
+            
+            // Set Mastered Checkbox
+            const toggle = document.getElementById('modalMasteredToggle');
+            toggle.checked = state.masteredIds.includes(kanaItem.id);
+
+            // Populate 3 Vocabulary Words
+            const wordsList = document.getElementById('modalWordsList');
+            wordsList.innerHTML = '';
+            kanaItem.words.forEach(w => {
+                const row = document.createElement('div');
+                row.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between";
+                row.innerHTML = `
+                    <div>
+                        <div class="text-sm font-bold text-slate-800">${w.japanese} <span class="text-xs font-normal text-sakura-600">(${w.kana})</span></div>
+                        <div class="text-xs text-slate-500">${w.meaning}</div>
+                    </div>
+                    <button onclick="speakJapanese('${w.japanese}')" class="w-8 h-8 rounded-full bg-white text-sakura-500 flex items-center justify-center shadow-sm active-scale">
+                        <i class="fa-solid fa-volume-high text-xs"></i>
+                    </button>
+                `;
+                wordsList.appendChild(row);
+            });
+
+            // Populate 3 Sentences
+            const sentencesList = document.getElementById('modalSentencesList');
+            sentencesList.innerHTML = '';
+            kanaItem.sentences.forEach(s => {
+                const row = document.createElement('div');
+                row.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1";
+                row.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="text-xs font-bold text-slate-800">${s.japanese}</div>
+                        <button onclick="speakJapanese('${s.japanese}')" class="w-6 h-6 rounded-full bg-white text-fuji-500 flex items-center justify-center shadow-sm active-scale flex-shrink-0 ml-2">
+                            <i class="fa-solid fa-volume-high text-[10px]"></i>
+                        </button>
+                    </div>
+                    <div class="text-[11px] text-slate-400">${s.kana}</div>
+                    <div class="text-xs text-slate-600 font-medium">${s.meaning}</div>
+                `;
+                sentencesList.appendChild(row);
+            });
+
+            // Show Modal
+            document.getElementById('detailModal').classList.remove('hidden');
+            speakCurrentModal();
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        function speakCurrentModal() {
+            if (state.activeModalKana) {
+                speakJapanese(state.activeModalKana.char);
+            }
+        }
+
+        function toggleMasteryFromModal() {
+            if (!state.activeModalKana) return;
+            const id = state.activeModalKana.id;
+            const index = state.masteredIds.indexOf(id);
+            if (index > -1) {
+                state.masteredIds.splice(index, 1);
+            } else {
+                state.masteredIds.push(id);
+            }
+            localStorage.setItem('kana_mastered', JSON.stringify(state.masteredIds));
+            renderKanaGrid();
+        }
+
+        function setQuizRange(range) {
+            state.quizRange = range;
+            document.querySelectorAll('.qrange-btn').forEach(btn => {
+                btn.className = "qrange-btn py-2.5 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-bold transition";
+            });
+            const active = document.getElementById(`qrange-${range}`);
+            if (active) {
+                active.className = "qrange-btn py-2.5 px-2 rounded-xl border-2 border-fuji-500 bg-fuji-50 text-fuji-600 text-xs font-bold transition";
+            }
+        }
+
+        function startQuiz() {
+            let pool = KANA_DATABASE;
+            if (state.quizRange === 'hiragana') pool = KANA_DATABASE.filter(k => k.type === 'hiragana');
+            if (state.quizRange === 'katakana') pool = KANA_DATABASE.filter(k => k.type === 'katakana');
+
+            if (pool.length < 4) {
+                alert('目前測驗庫題目不足，請切換範圍');
+                return;
+            }
+
+            // Shuffle pool & select 10 questions
+            const shuffled = [...pool].sort(() => 0.5 - Math.random());
+            state.quizQuestions = shuffled.slice(0, 10);
+            state.quizIndex = 0;
+            state.quizScore = 0;
+            state.quizWrong = [];
+
+            document.getElementById('quizSetupCard').classList.add('hidden');
+            document.getElementById('quizResultCard').classList.add('hidden');
+            document.getElementById('quizActiveCard').classList.remove('hidden');
+
+            renderQuizQuestion();
+        }
+
+        function renderQuizQuestion() {
+            const current = state.quizQuestions[state.quizIndex];
+            const qType = document.getElementById('quizTypeSelect').value;
+            
+            document.getElementById('quizQuestionNum').innerText = `第 ${state.quizIndex + 1} / 10 題`;
+            document.getElementById('quizScoreCount').innerText = `得分: ${state.quizScore}`;
+
+            const promptBox = document.getElementById('quizPromptBox');
+            promptBox.innerHTML = '';
+
+            // Render Prompt according to question type
+            if (qType === 'kana2romaji') {
+                document.getElementById('quizTypeLabel').innerText = "請選擇正確的羅馬拼音";
+                promptBox.innerHTML = `<div class="text-6xl font-black text-slate-800">${current.char}</div>`;
+            } else if (qType === 'audio2kana') {
+                document.getElementById('quizTypeLabel').innerText = "請點擊朗讀並選擇正確的假名";
+                promptBox.innerHTML = `
+                    <button onclick="speakJapanese('${current.char}')" class="w-16 h-16 rounded-full bg-fuji-500 text-white text-2xl flex items-center justify-center shadow-md active-scale">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <div class="text-xs text-slate-400 mt-2">點擊播放發音</div>
+                `;
+                speakJapanese(current.char);
+            } else if (qType === 'word2kana') {
+                document.getElementById('quizTypeLabel').innerText = "常用詞對應假名選擇";
+                const randomWord = current.words[0];
+                promptBox.innerHTML = `
+                    <div class="text-2xl font-bold text-slate-800">${randomWord.japanese}</div>
+                    <div class="text-xs text-slate-500 mt-1">含義：${randomWord.meaning}</div>
+                `;
+            }
+
+            // Generate 4 options
+            let optionsPool = KANA_DATABASE.filter(k => k.id !== current.id);
+            optionsPool = optionsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+            optionsPool.push(current);
+            optionsPool = optionsPool.sort(() => 0.5 - Math.random());
+
+            const optionsGrid = document.getElementById('quizOptionsGrid');
+            optionsGrid.innerHTML = '';
+
+            optionsPool.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "py-4 bg-white border border-slate-200 hover:border-fuji-400 rounded-2xl font-bold text-slate-800 shadow-sm transition active-scale text-lg";
+                
+                if (qType === 'kana2romaji') {
+                    btn.innerText = opt.romaji;
+                } else {
+                    btn.innerText = opt.char;
+                }
+
+                btn.onclick = () => handleAnswer(opt, current, btn);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedOpt, correctOpt, btnElement) {
+            const feedback = document.getElementById('quizFeedback');
+            const isCorrect = selectedOpt.id === correctOpt.id;
+
+            if (isCorrect) {
+                state.quizScore += 10;
+                btnElement.className = "py-4 bg-emerald-500 text-white rounded-2xl font-bold shadow-md text-lg";
+                feedback.innerHTML = `<span class="text-emerald-500"><i class="fa-solid fa-circle-check"></i> 答對了！</span>`;
+            } else {
+                state.quizWrong.push(correctOpt);
+                btnElement.className = "py-4 bg-red-500 text-white rounded-2xl font-bold shadow-md text-lg";
+                feedback.innerHTML = `<span class="text-red-500"><i class="fa-solid fa-circle-xmark"></i> 正確答案是：${correctOpt.char} (${correctOpt.romaji})</span>`;
+            }
+
+            feedback.style.opacity = "1";
+
+            setTimeout(() => {
+                feedback.style.opacity = "0";
+                state.quizIndex++;
+                if (state.quizIndex < 10) {
+                    renderQuizQuestion();
+                } else {
+                    finishQuiz();
+                }
+            }, 1200);
+        }
+
+        function finishQuiz() {
+            document.getElementById('quizActiveCard').classList.add('hidden');
+            document.getElementById('quizResultCard').classList.remove('hidden');
+
+            document.getElementById('quizResultDetail').innerText = `本次得分：${state.quizScore} 分 / 100 分`;
+
+            // Save high score
+            if (state.quizScore > state.highScore) {
+                state.highScore = state.quizScore;
+                localStorage.setItem('kana_highscore', state.highScore.toString());
+            }
+
+            // Populate wrong list
+            const wrongList = document.getElementById('quizWrongList');
+            wrongList.innerHTML = '';
+            if (state.quizWrong.length === 0) {
+                wrongList.innerHTML = `<span class="text-xs text-emerald-600 font-bold"><i class="fa-solid fa-star"></i> 太棒了！本次沒有任何錯題！</span>`;
+            } else {
+                state.quizWrong.forEach(item => {
+                    const pill = document.createElement('span');
+                    pill.className = "bg-red-50 border border-red-200 text-red-600 text-xs px-2.5 py-1 rounded-full font-bold cursor-pointer";
+                    pill.innerText = `${item.char} (${item.romaji})`;
+                    pill.onclick = () => openModal(item);
+                    wrongList.appendChild(pill);
+                });
+            }
+        }
+
+        function resetToQuizSetup() {
+            document.getElementById('quizResultCard').classList.add('hidden');
+            document.getElementById('quizSetupCard').classList.remove('hidden');
+        }
+
+        function exitQuiz() {
+            if (confirm('確定要結束本次測驗嗎？')) {
+                resetToQuizSetup();
+            }
+        }
+
+        function updateProgressTab() {
+            const totalHira = KANA_DATABASE.filter(k => k.type === 'hiragana').length;
+            const masteredHira = KANA_DATABASE.filter(k => k.type === 'hiragana' && state.masteredIds.includes(k.id)).length;
+            const hiraPercent = totalHira > 0 ? Math.round((masteredHira / totalHira) * 100) : 0;
+
+            document.getElementById('progHiraText').innerText = `${hiraPercent}% (${masteredHira}/${totalHira})`;
+            document.getElementById('progHiraBar').style.width = `${hiraPercent}%`;
+
+            const totalKata = KANA_DATABASE.filter(k => k.type === 'katakana').length;
+            const masteredKata = KANA_DATABASE.filter(k => k.type === 'katakana' && state.masteredIds.includes(k.id)).length;
+            const kataPercent = totalKata > 0 ? Math.round((masteredKata / totalKata) * 100) : 0;
+
+            document.getElementById('progKataText').innerText = `${kataPercent}% (${masteredKata}/${totalKata})`;
+            document.getElementById('progKataBar').style.width = `${kataPercent}%`;
+
+            document.getElementById('statStreak').innerText = `${state.streakDays} 天`;
+            document.getElementById('statHighScore').innerText = `${state.highScore} 分`;
+        }
+
+        function confirmResetProgress() {
+            if (confirm('確定要清空所有已掌握記錄及最高分嗎？此操作不可逆。')) {
+                state.masteredIds = [];
+                state.highScore = 0;
+                localStorage.removeItem('kana_mastered');
+                localStorage.removeItem('kana_highscore');
+                updateProgressTab();
+                renderKanaGrid();
+                alert('進度已成功重置！');
+            }
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const resultsList = document.getElementById('searchResultsList');
+            const countText = document.getElementById('searchCountText');
+
+            if (!query) {
+                resultsList.innerHTML = '';
+                countText.innerText = '請輸入關鍵字進行快速檢索';
+                return;
+            }
+
+            const results = KANA_DATABASE.filter(item => {
+                const matchChar = item.char.includes(query);
+                const matchRomaji = item.romaji.toLowerCase().includes(query);
+                const matchOrigin = item.origin.includes(query);
+                const matchWord = item.words.some(w => w.japanese.includes(query) || w.meaning.includes(query));
+                return matchChar || matchRomaji || matchOrigin || matchWord;
+            });
+
+            countText.innerText = `找到 ${results.length} 個相關結果`;
+            resultsList.innerHTML = '';
+
+            results.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between active-scale cursor-pointer";
+                card.onclick = () => openModal(item);
+
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="text-3xl font-black ${item.type === 'hiragana' ? 'text-sakura-500' : 'text-fuji-500'}">${item.char}</div>
+                        <div>
+                            <div class="text-sm font-bold text-slate-800">${item.romaji} <span class="text-xs font-normal text-slate-400">(源自：${item.origin})</span></div>
+                            <div class="text-xs text-slate-500">例詞：${item.words[0].japanese} (${item.words[0].meaning})</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                `;
+                resultsList.appendChild(card);
+            });
+        }
+
+        function checkStreak() {
+            const today = new Date().toISOString().split('T')[0];
+            if (!state.lastStudyDate) {
+                state.lastStudyDate = today;
+                localStorage.setItem('kana_last_date', today);
+            } else if (state.lastStudyDate !== today) {
+                const last = new Date(state.lastStudyDate);
+                const curr = new Date(today);
+                const diffDays = Math.round((curr - last) / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 1) {
+                    state.streakDays += 1;
+                } else if (diffDays > 1) {
+                    state.streakDays = 1;
+                }
+                state.lastStudyDate = today;
+                localStorage.setItem('kana_streak', state.streakDays.toString());
+                localStorage.setItem('kana_last_date', today);
+            }
+            document.getElementById('streakCount').innerText = `${state.streakDays} 天`;
+        }
+
+        window.onload = function() {
+            checkStreak();
+            renderKanaGrid();
+        };
+    </script>
+</body>
+</html>
