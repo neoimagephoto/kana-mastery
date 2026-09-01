@@ -63,7 +63,7 @@
         }
         
         body {
-            background-color: #e5e7eb;
+            background-color: #ffffff;
             color: #2D3748;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", sans-serif;
             touch-action: manipulation;
@@ -108,7 +108,7 @@
         }
     </style>
 </head>
-<body class="flex justify-center items-center bg-stone-200 min-h-screen">
+<body class="flex justify-center items-center bg-white min-h-screen">
 
     <!-- Responsive Main Wrapper Container -->
     <div id="app" class="w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-5xl h-full md:h-[94vh] md:max-h-[900px] bg-paper flex flex-col relative shadow-2xl overflow-hidden md:rounded-3xl md:border md:border-stone-300/70">
@@ -134,41 +134,44 @@
             
             <!-- VIEW 1: KANA CHART (五十音圖) -->
             <section id="view-chart" class="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                <!-- Hiragana / Katakana Toggle Switch -->
-                <div class="bg-stone-200/80 p-1 rounded-xl flex font-medium text-sm sm:text-base max-w-xl mx-auto">
-                    <button id="btn-hiragana" onclick="switchKanaType('hiragana')" class="flex-1 py-2 sm:py-2.5 text-center rounded-lg transition-all duration-200 bg-white text-stone-800 shadow-sm font-bold">
-                        平假名 (Hiragana)
-                    </button>
-                    <button id="btn-katakana" onclick="switchKanaType('katakana')" class="flex-1 py-2 sm:py-2.5 text-center rounded-lg transition-all duration-200 text-stone-500">
-                        片假名 (Katakana)
-                    </button>
-                </div>
+                <!-- 固定懸浮控制容器 (Sticky Floating Controls Header) -->
+                <div class="sticky top-0 z-20 bg-paper/95 backdrop-blur-md pt-2 pb-3 space-y-3 sm:space-y-4 border-b border-stone-200/80 -mx-4 -mt-4 px-4 sm:-mx-6 sm:-mt-6 sm:px-6 shadow-sm">
+                    <!-- Hiragana / Katakana Toggle Switch -->
+                    <div class="bg-stone-200/80 p-1 rounded-xl flex font-medium text-sm sm:text-base max-w-xl mx-auto">
+                        <button id="btn-hiragana" onclick="switchKanaType('hiragana')" class="flex-1 py-2 sm:py-2.5 text-center rounded-lg transition-all duration-200 bg-white text-stone-800 shadow-sm font-bold">
+                            平假名 (Hiragana)
+                        </button>
+                        <button id="btn-katakana" onclick="switchKanaType('katakana')" class="flex-1 py-2 sm:py-2.5 text-center rounded-lg transition-all duration-200 text-stone-500">
+                            片假名 (Katakana)
+                        </button>
+                    </div>
 
-                <!-- Subtabs: 清音 / 濁音 / 拗音 -->
-                <div class="flex border-b border-stone-200 text-sm sm:text-base font-medium gap-6 justify-center sm:justify-start">
-                    <button id="tab-seion" onclick="switchKanaGroup('seion')" class="pb-2.5 text-matcha-700 border-b-2 border-matcha-500 font-bold">清音 (Seion)</button>
-                    <button id="tab-dakuon" onclick="switchKanaGroup('dakuon')" class="pb-2.5 text-stone-400 border-b-2 border-transparent">濁音/半濁音</button>
-                    <button id="tab-yoon" onclick="switchKanaGroup('yoon')" class="pb-2.5 text-stone-400 border-b-2 border-transparent">拗音 (Yoon)</button>
-                </div>
+                    <!-- Subtabs: 清音 / 濁音 / 拗音 -->
+                    <div class="flex border-b border-stone-200 text-sm sm:text-base font-medium gap-6 justify-center sm:justify-start">
+                        <button id="tab-seion" onclick="switchKanaGroup('seion')" class="pb-2.5 text-matcha-700 border-b-2 border-matcha-500 font-bold">清音 (Seion)</button>
+                        <button id="tab-dakuon" onclick="switchKanaGroup('dakuon')" class="pb-2.5 text-stone-400 border-b-2 border-transparent">濁音/半濁音</button>
+                        <button id="tab-yoon" onclick="switchKanaGroup('yoon')" class="pb-2.5 text-stone-400 border-b-2 border-transparent">拗音 (Yoon)</button>
+                    </div>
 
-                <!-- Status Filter Bar -->
-                <div class="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-stone-500 bg-white/70 p-2.5 sm:p-3 rounded-xl border border-stone-200/60">
-                    <span class="font-medium">顯示篩選:</span>
-                    <div class="flex flex-wrap gap-1.5">
-                        <button onclick="filterStatus('all')" class="px-2.5 py-1 rounded-lg bg-stone-800 text-white font-medium">全部</button>
-                        <button onclick="filterStatus('unlearned')" class="px-2.5 py-1 rounded-lg bg-stone-200 text-stone-600 hover:bg-stone-300">未學</button>
-                        <button onclick="filterStatus('learning')" class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200">學習中</button>
-                        <button onclick="filterStatus('mastered')" class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200">已掌握</button>
+                    <!-- Status Filter Bar -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-stone-500 bg-white/70 p-2.5 sm:p-3 rounded-xl border border-stone-200/60">
+                        <span class="font-medium">顯示篩選:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button onclick="filterStatus('all')" class="px-2.5 py-1 rounded-lg bg-stone-800 text-white font-medium">全部</button>
+                            <button onclick="filterStatus('unlearned')" class="px-2.5 py-1 rounded-lg bg-stone-200 text-stone-600 hover:bg-stone-300">未學</button>
+                            <button onclick="filterStatus('learning')" class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200">學習中</button>
+                            <button onclick="filterStatus('mastered')" class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200">已掌握</button>
+                        </div>
+                    </div>
+
+                    <!-- Grid Columns Legend (A, I, U, E, O) -->
+                    <div id="column-header" class="grid grid-cols-5 text-center text-xs sm:text-sm font-bold text-stone-400 tracking-wider pt-1">
+                        <span>あ段</span><span>い段</span><span>う段</span><span>え段</span><span>お段</span>
                     </div>
                 </div>
 
-                <!-- Grid Columns Legend (A, I, U, E, O) -->
-                <div id="column-header" class="grid grid-cols-5 text-center text-xs sm:text-sm font-bold text-stone-400 tracking-wider">
-                    <span>あ段</span><span>い段</span><span>う段</span><span>え段</span><span>お段</span>
-                </div>
-
                 <!-- Kana Cards Grid -->
-                <div id="kana-grid" class="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+                <div id="kana-grid" class="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4 pt-1">
                     <!-- Dynamic Grid Content Rendered via JS -->
                 </div>
             </section>
